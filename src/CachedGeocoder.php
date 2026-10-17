@@ -410,7 +410,15 @@ final class CachedGeocoder
         }
 
         try {
-            GeocodeCacheStatistic::record($hash, $counter);
+            $connection = (new GeocodeCacheStatistic)->getConnection();
+
+            // In the transaction of the application a failed statement aborts the whole transaction on PostgreSQL.
+            // A savepoint keeps the failure of the counters local.
+            if ($connection->transactionLevel() > 0) {
+                $connection->transaction(fn () => GeocodeCacheStatistic::record($hash, $counter));
+            } else {
+                GeocodeCacheStatistic::record($hash, $counter);
+            }
         } catch (Throwable $exception) {
             GeocodeLog::write('warning', 'The request statistics could not be written.', ['exception' => $exception::class]);
         }

@@ -347,7 +347,7 @@ function seedEntriesOfOnePlace(string $placeId, string ...$searches): FakeAdapte
 
 it('asks the service once for several entries of the same place and renews all of them', function () {
     $adapter = seedEntriesOfOnePlace('shared', 'Alexanderplatz 1, Berlin', 'Alexanderplatz Berlin 10178', 'Berlin Alexanderplatz');
-    $requestedAt = GeocodeCacheEntry::query()->pluck('last_requested_at', 'id');
+    $requestedAt = GeocodeCacheEntry::query()->orderBy('id')->pluck('last_requested_at', 'id');
     $this->travel(27)->days();
     $adapter->queue(new Coordinates(3.0, 4.0, 'shared'));
 
@@ -355,7 +355,7 @@ it('asks the service once for several entries of the same place and renews all o
         ->expectsOutputToContain('1 refreshed, 2 copied to entries of the same place, 0 without result, 0 skipped, 0 failed.')
         ->assertSuccessful();
 
-    $entries = GeocodeCacheEntry::query()->get();
+    $entries = GeocodeCacheEntry::query()->orderBy('id')->get();
 
     expect($adapter->calls())->toBe(1)
         ->and($entries)->toHaveCount(3)

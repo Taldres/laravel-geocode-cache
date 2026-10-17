@@ -179,11 +179,12 @@ class RefreshCommand extends Command
             ->orderBy('soonest')
             ->limit($limit)
             ->get()
-            ->map(fn (object $row): Collection => $this->due($source)->where('place_id', $row->place_id)->orderBy('expires_at')->get());
+            ->map(fn (object $row): Collection => $this->due($source)->where('place_id', $row->place_id)->orderBy('expires_at')->orderBy('id')->get());
 
         $alone = $this->due($source)
             ->whereNull('place_id')
             ->orderBy('expires_at')
+            ->orderBy('id')
             ->limit($limit)
             ->get()
             ->map(fn (GeocodeCacheEntry $entry): Collection => Collection::make([$entry]));
