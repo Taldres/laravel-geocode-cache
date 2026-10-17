@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use InvalidArgumentException;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
 use Taldres\GeocodeCache\Data\Coordinates;
@@ -22,6 +23,7 @@ use Taldres\GeocodeCache\Data\PlaceIdQuery;
 use Taldres\GeocodeCache\Enums\RefreshOutcome;
 use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
 use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
+use Taldres\GeocodeCache\Exceptions\GeocodeCacheException;
 use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
 use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
 use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
@@ -29,6 +31,8 @@ use Taldres\GeocodeCache\Exceptions\UnsupportedQueryException;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Support\GeocodeLog;
+use Taldres\GeocodeCache\Support\LockNotAcquired;
+use Taldres\GeocodeCache\Support\Settings;
 use Throwable;
 
 final class CachedGeocoder
@@ -81,7 +85,7 @@ final class CachedGeocoder
             return $this->locked($hash, function () use ($query, $hash, &$events): ?GeocodeResult {
                 return $this->findOrFetch($query, $hash, $events);
             });
-        } catch (LockTimeoutException) {
+        } catch (LockNotAcquired) {
             // The process that held the lock may have stored the entry just now.
             return $this->find($hash) ?? throw $this->lockTimeout();
         } finally {
@@ -106,6 +110,8 @@ final class CachedGeocoder
      * another one that leads to the same place, such as the place ID of the entry. The stored query stays as it is.
      * The entry is read again under its lock and left alone if it was deleted, has expired, or is not the one that
      * was fetched at $onlyIfFetchedAt anymore.
+     *
+     * @internal Used by geocode-cache:refresh. Call refresh() instead.
      *
      * @throws GeocodingFailedException
      * @throws UnsupportedQueryException If the lookup is a place ID and the adapter cannot look it up.
@@ -133,7 +139,7 @@ final class CachedGeocoder
 
                 return $this->replace($current, $this->build($lookup, $hash, $coordinates)) ? RefreshOutcome::Refreshed : RefreshOutcome::Skipped;
             });
-        } catch (LockTimeoutException) {
+        } catch (LockNotAcquired) {
             // No fallback to the old entry: it would count as a request, and as a renewal.
             throw $this->lockTimeout();
         } finally {
@@ -145,6 +151,8 @@ final class CachedGeocoder
      * Copies the fresh result of a refreshed entry to the other entries of the same place, so one service call renews
      * all of them. Each copy is conditional on the state the entry was selected in. An entry that was deleted, has
      * expired or was renewed since then stays as it is. Returns the number of entries that were updated.
+     *
+     * @internal Used by geocode-cache:refresh.
      *
      * @param  iterable<GeocodeCacheEntry>  $siblings
      */
@@ -358,7 +366,7 @@ final class CachedGeocoder
 
         GeocodeCacheEntry::query()
             ->whereKey($entry->getKey())
-            ->where('last_requested_at', '<=', $now->copy()->subSeconds(config()->integer('geocode-cache.refresh.touch_interval')))
+            ->where('last_requested_at', '<=', $now->copy()->subSeconds(Settings::integer('geocode-cache.refresh.touch_interval')))
             ->update(['last_requested_at' => $now]);
     }
 
@@ -368,19 +376,24 @@ final class CachedGeocoder
      * @param  Closure(): TResult  $callback
      * @return TResult
      *
-     * @throws LockTimeoutException If another process still holds the lock after lock.wait seconds.
+     * @throws LockNotAcquired If another process still holds the lock after lock.wait seconds.
      */
     private function locked(string $hash, Closure $callback): mixed
     {
         $name = config('geocode-cache.lock.store');
-        $store = Cache::store(is_string($name) && $name !== '' ? $name : null)->getStore();
+
+        try {
+            $store = Cache::store(is_string($name) && $name !== '' ? $name : null)->getStore();
+        } catch (InvalidArgumentException $exception) {
+            throw new InvalidConfigurationException($exception->getMessage(), previous: $exception);
+        }
 
         if (! $store instanceof LockProvider) {
             throw new InvalidConfigurationException('The cache store of the geocode cache locks does not support atomic locks. Set geocode-cache.lock.store to a store that does, such as redis, database, file or memcached.');
         }
 
-        $seconds = config()->integer('geocode-cache.lock.seconds');
-        $wait = config()->integer('geocode-cache.lock.wait');
+        $seconds = Settings::integer('geocode-cache.lock.seconds');
+        $wait = Settings::integer('geocode-cache.lock.wait');
 
         // A lock without a lifetime would never free itself after a crash.
         if ($seconds < 1 || $wait < 0) {
@@ -388,7 +401,12 @@ final class CachedGeocoder
         }
 
         $lock = $store->lock("geocode-cache:{$hash}", $seconds);
-        $lock->block($wait);
+
+        try {
+            $lock->block($wait);
+        } catch (LockTimeoutException) {
+            throw new LockNotAcquired;
+        }
 
         try {
             return $callback();
@@ -415,6 +433,15 @@ final class CachedGeocoder
         } catch (GeocodingFailedException $exception) {
             GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => $exception->reason]);
             $events[] = new GeocodeLookupFailed($this->adapter->source(), $exception->reason);
+
+            throw $exception;
+        } catch (GeocodeCacheException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            // An adapter should throw a GeocodingFailedException. Anything else is passed on unchanged, because its
+            // message may hold the request URL, but the call may have been paid for, so it is logged and announced.
+            GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => 'unexpected']);
+            $events[] = new GeocodeLookupFailed($this->adapter->source(), 'unexpected');
 
             throw $exception;
         }

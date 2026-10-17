@@ -50,6 +50,10 @@ under `drivers.mapbox`, for the credentials and the timeout.
 Create failures with the factories of `GeocodingFailedException` (`connection()`, `httpStatus()`, `serviceStatus()`,
 `malformedResponse()`), or pass a fixed `reason` code to its constructor. Never copy the message of a library exception into it.
 
+Catch the exceptions of your HTTP client and translate them. If an adapter lets another exception escape, the cache
+stores nothing, logs the failure with the reason `unexpected`, dispatches `GeocodeLookupFailed` and passes the exception
+on unchanged. Its message may then hold the request URL, which the package cannot prevent.
+
 ## Place IDs
 
 An adapter that also implements `Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup` can answer a

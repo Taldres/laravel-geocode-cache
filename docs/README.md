@@ -24,4 +24,5 @@
 
 ## More
 
+- [Versioning and Stable API](stability.md): what stays stable within a major version and what is internal
 - [AI Agents](ai-agents.md): the Laravel Boost skill that ships with the package

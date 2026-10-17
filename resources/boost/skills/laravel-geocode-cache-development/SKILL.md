@@ -147,7 +147,8 @@ package logs it and passes it to `report()`. Test them with `Event::fake()`.
 ## Custom Adapters
 
 Implement `Taldres\GeocodeCache\Contracts\Adapter` (`source()`, `maximumPrecision()`, `maximumRetentionDays()` and `geocode(GeocodeQuery): ?Coordinates`, throwing
-`GeocodingFailedException` on failure) and register it. The manager wraps it in the cache:
+`GeocodingFailedException` on failure, translating the exceptions of the HTTP client; anything else escapes unchanged and is
+logged and announced with the reason `unexpected`) and register it. The manager wraps it in the cache:
 
 ```php
 GeocodeCache::extend('mapbox', fn () => new MapboxAdapter(config('services.mapbox.token')));
@@ -179,5 +180,6 @@ altogether.
 - Storing the formatted address or other fields of a Google response next to the coordinates.
 - Passing postal codes as integers.
 - Adding `latitude` and `longitude` columns, or a relation to the cache table, to a model.
+- Calling `refreshUsing()`, `shareWithPlace()` or the classes in `Support`: they are internal. `docs/stability.md` lists what is stable.
 - Catching `GeocodingFailedException` and falling back to older coordinates that are stored elsewhere.
 - Calling the Google API directly for something the cache can answer.

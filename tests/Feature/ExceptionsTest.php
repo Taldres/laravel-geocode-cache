@@ -15,6 +15,8 @@ use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
 use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
 use Taldres\GeocodeCache\Exceptions\UnsupportedQueryException;
 use Taldres\GeocodeCache\Facades\GeocodeCache;
+use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
+use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Tests\Fixtures\FakeAdapter;
 
 beforeEach(function () {
@@ -85,7 +87,75 @@ it('reports an invalid setting with the configuration exception', function (stri
     'precision' => ['geocode-cache.precision', 99],
     'lock.seconds' => ['geocode-cache.lock.seconds', 0],
     'lock.wait' => ['geocode-cache.lock.wait', -1],
+    'lock.seconds as text' => ['geocode-cache.lock.seconds', 'abc'],
+    'lock.wait missing' => ['geocode-cache.lock.wait', null],
 ]);
+
+it('reports a setting of the wrong type with the configuration exception', function (string $key, mixed $value, Closure $use) {
+    $original = config($key);
+    config([$key => $value]);
+
+    try {
+        $use();
+
+        $this->fail('The setting was accepted.');
+    } catch (InvalidConfigurationException $exception) {
+        expect($exception)->toBeInstanceOf(GeocodeCacheException::class)
+            ->and($exception->getMessage())->toContain($key);
+    } finally {
+        // The migrations read the table names again when the test database is torn down.
+        config([$key => $original]);
+    }
+})->with([
+    'driver' => ['geocode-cache.driver', null, fn () => GeocodeCache::driver()],
+    'table' => ['geocode-cache.table', null, fn () => (new GeocodeCacheEntry)->getTable()],
+    'statistics table' => ['geocode-cache.statistics.table', 5, fn () => (new GeocodeCacheStatistic)->getTable()],
+    'statistics retention' => ['geocode-cache.statistics.retention_days', 'many', fn () => (new GeocodeCacheStatistic)->prunable()],
+    'touch interval' => ['geocode-cache.refresh.touch_interval', 'often', function () {
+        config(['geocode-cache.refresh.enabled' => true]);
+        $geocoder = new CachedGeocoder(FakeAdapter::returning());
+        $geocoder->geocode('Berlin');
+        $geocoder->geocode('Berlin');
+    }],
+]);
+
+it('reports an unknown driver with the configuration exception', function () {
+    GeocodeCache::driver('nope');
+})->throws(InvalidConfigurationException::class, 'Driver [nope] not supported.');
+
+it('reports an unknown default driver with the configuration exception', function () {
+    config(['geocode-cache.driver' => 'nope']);
+
+    GeocodeCache::geocode('Berlin');
+})->throws(InvalidConfigurationException::class, 'Driver [nope] not supported.');
+
+it('reports an empty default driver with the configuration exception', function (mixed $driver) {
+    config(['geocode-cache.driver' => $driver]);
+
+    GeocodeCache::driver();
+})->throws(InvalidConfigurationException::class)->with(['', null]);
+
+it('reports a lock store that is not defined with the configuration exception', function () {
+    config(['geocode-cache.lock.store' => 'redis-locks']);
+    $adapter = FakeAdapter::returning();
+
+    try {
+        (new CachedGeocoder($adapter))->geocode('Berlin');
+
+        $this->fail('The lock store was accepted.');
+    } catch (InvalidConfigurationException $exception) {
+        expect($exception)->toBeInstanceOf(GeocodeCacheException::class)
+            ->and($exception->getMessage())->toContain('redis-locks')
+            ->and($adapter->calls())->toBe(0);
+    }
+});
+
+it('still finds a registered custom driver and the built-in one', function () {
+    GeocodeCache::extend('custom', fn () => FakeAdapter::returning());
+
+    expect(GeocodeCache::driver('custom'))->toBeInstanceOf(CachedGeocoder::class)
+        ->and(GeocodeCache::driver('google'))->toBeInstanceOf(CachedGeocoder::class);
+});
 
 it('reports an adapter with an unusable maximum with the configuration exception', function (FakeAdapter $adapter) {
     expect(fn () => (new CachedGeocoder($adapter))->geocode('Berlin'))->toThrow(InvalidConfigurationException::class)

@@ -39,6 +39,9 @@ any map.
 
 ## Sources
 
+The retention clauses above were checked against the pages on 17 October 2026. The EEA terms were last modified on
+10 June 2026 and the terms outside the EEA on 15 October 2026.
+
 - [Google Maps Platform terms for the EEA](https://cloud.google.com/terms/maps-platform/eea/maps-service-terms)
 - [Google Maps Platform terms outside the EEA](https://cloud.google.com/maps-platform/terms/maps-service-terms)
 - [Geocoding API policies](https://developers.google.com/maps/documentation/geocoding/policies)

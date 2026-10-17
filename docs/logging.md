@@ -25,8 +25,9 @@ GEOCODE_CACHE_LOG_CHANNEL=geocode
 | `error` | The geocode cache refresh stopped after repeated failures. | `failures` |
 
 `reason` is a fixed code of the `GeocodingFailedException`: `connection`, `http_503` (the HTTP status), `status_REQUEST_DENIED` (the status
-of the service), `malformed_response`, `lock_timeout` or `unspecified`. It never holds text from the service or
-from a library. The message of the exception is not logged.
+of the service), `malformed_response`, `lock_timeout` or `unspecified`. If an adapter throws something else, the reason
+is `unexpected` and the exception is passed on unchanged. `reason` never holds text from the service or from a library.
+The message of the exception is not logged.
 
 The same facts are available as [events](events.md).
 

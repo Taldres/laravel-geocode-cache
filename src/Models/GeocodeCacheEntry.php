@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Taldres\GeocodeCache\Casts\UtcDateTime;
+use Taldres\GeocodeCache\Support\Settings;
 
 /**
  * @property int $id
@@ -43,7 +44,7 @@ class GeocodeCacheEntry extends Model
 
     public function getTable(): string
     {
-        return config()->string('geocode-cache.table');
+        return Settings::string('geocode-cache.table');
     }
 
     /**
