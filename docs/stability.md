@@ -7,15 +7,17 @@ in a way that breaks code written against them. A breaking change needs a new ma
 
 - **The facade and the geocoder:** `GeocodeCache::geocode()`, `refresh()`, `driver()`, `extend()`, `supports()`,
   `supportsPlaceIds()`, `adapter()`, `retentionDays()` and `precision()`, with their parameters and return types.
-- **The data objects:** `GeocodeQuery`, `PlaceIdQuery`, `Bounds`, `Coordinates` and `GeocodeResult` with their public
+- **The data objects:** `GeocodeQuery`, `PlaceIdQuery`, `Bounds`, `Coordinates`, `GeocodeResult` and the
+  `RefreshOutcome` enum with their public
   properties and factories. The cache key of an existing query stays the same, so a new minor version does not
   invalidate stored entries.
 - **The adapter contracts:** `Contracts\Adapter` and `Contracts\SupportsPlaceIdLookup`. A method is only added in a
   major version, because every custom adapter would have to implement it.
 - **The configuration:** every key of `config/geocode-cache.php`, its meaning and its environment variable. A new key
   gets a default that keeps the old behaviour.
-- **The tables:** the columns of `geocode_cache` and `geocode_cache_statistics`. A change comes as a new migration.
-  The models read them. Writing to the tables yourself is not supported.
+- **The tables:** the columns of `geocode_cache` and `geocode_cache_statistics`, under the names set in `table` and
+  `statistics.table`. A change comes as a new migration. The models `GeocodeCacheEntry` and `GeocodeCacheStatistic`
+  may be used to read them, with their scopes and attributes. Writing to the tables yourself is not supported.
 - **The commands:** `geocode-cache:prune`, `geocode-cache:refresh` and `geocode-cache:statistics` with their options
   and exit codes, and the publish tags `geocode-cache`, `geocode-cache-config` and `geocode-cache-migrations`.
 - **The exceptions:** their classes and parents. `GeocodingLockTimeoutException` stays a `GeocodingFailedException`,
@@ -28,7 +30,8 @@ in a way that breaks code written against them. A breaking change needs a new ma
 ## May Grow in a Minor Version
 
 - **The `reason` codes** of `GeocodingFailedException`, the log and `GeocodeLookupFailed`: `connection`,
-  `http_<status>`, `status_<CODE>`, `malformed_response`, `lock_timeout`, `unspecified` and `unexpected` exist today.
+  `http_<status>`, `status_<CODE>`, `status_unknown`, `malformed_response`, `lock_timeout`, `unspecified` and
+  `unexpected` exist today.
   Match the ones you know and treat any other value as a failure of the service.
 - **The text of messages** of exceptions and of the log. Never parse them.
 - **The statuses of the service** that a driver maps to a failure.

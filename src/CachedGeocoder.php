@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use InvalidArgumentException;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
 use Taldres\GeocodeCache\Data\Coordinates;
@@ -380,7 +381,12 @@ final class CachedGeocoder
     private function locked(string $hash, Closure $callback): mixed
     {
         $name = config('geocode-cache.lock.store');
-        $store = Cache::store(is_string($name) && $name !== '' ? $name : null)->getStore();
+
+        try {
+            $store = Cache::store(is_string($name) && $name !== '' ? $name : null)->getStore();
+        } catch (InvalidArgumentException $exception) {
+            throw new InvalidConfigurationException($exception->getMessage(), previous: $exception);
+        }
 
         if (! $store instanceof LockProvider) {
             throw new InvalidConfigurationException('The cache store of the geocode cache locks does not support atomic locks. Set geocode-cache.lock.store to a store that does, such as redis, database, file or memcached.');

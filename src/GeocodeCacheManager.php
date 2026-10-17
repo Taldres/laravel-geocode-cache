@@ -23,13 +23,20 @@ class GeocodeCacheManager extends Manager
 
     public function driver($driver = null): CachedGeocoder
     {
-        $name = $driver ?? $this->getDefaultDriver();
+        // Like Laravel, an empty name means the default driver. Anything but a name is left to Laravel.
+        if ($driver === null || is_string($driver)) {
+            $driver = $driver ?: $this->getDefaultDriver();
 
-        if (! is_string($name) || (! isset($this->customCreators[$name]) && ! method_exists($this, 'create'.Str::studly($name).'Driver'))) {
-            throw new InvalidConfigurationException('Driver ['.(is_string($name) ? $name : get_debug_type($name)).'] not supported.');
+            if ($driver === '') {
+                throw new InvalidConfigurationException('The name of the geocode cache driver is empty.');
+            }
+
+            if (! isset($this->customCreators[$driver]) && ! method_exists($this, 'create'.Str::studly($driver).'Driver')) {
+                throw new InvalidConfigurationException("Driver [{$driver}] not supported.");
+            }
         }
 
-        $geocoder = parent::driver($name);
+        $geocoder = parent::driver($driver);
 
         if (! $geocoder instanceof CachedGeocoder) {
             throw new InvalidConfigurationException('The driver must return a CachedGeocoder or an Adapter.');

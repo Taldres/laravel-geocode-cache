@@ -14,6 +14,8 @@ use Taldres\GeocodeCache\Data\GeocodeQuery;
 use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
 use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
 use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
+use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
+use Taldres\GeocodeCache\Exceptions\UnsupportedQueryException;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Tests\Fixtures\FakeAdapter;
 
@@ -133,6 +135,25 @@ it('releases the lock after an unexpected error', function () {
     $lock->release();
     expect($geocoder->geocode('Berlin')->latitude)->toBe(1.0);
 });
+
+it('passes on the exceptions of the package that an adapter throws without calling them unexpected', function (Throwable $error) {
+    Event::fake([GeocodeLookupFailed::class]);
+    $geocoder = new CachedGeocoder(new FakeAdapter([fn () => throw $error]));
+
+    try {
+        $geocoder->geocode('Berlin');
+
+        $this->fail('The error was swallowed.');
+    } catch (Throwable $thrown) {
+        expect($thrown)->toBe($error);
+    }
+
+    Event::assertNothingDispatched();
+    expect(adapterErrorRecords())->toBe([]);
+})->with([
+    'configuration' => fn () => new InvalidConfigurationException('The adapter is not set up.'),
+    'unsupported query' => fn () => new UnsupportedQueryException('The adapter cannot do this.'),
+]);
 
 it('does not announce the exceptions of the package as unexpected', function () {
     Event::fake([GeocodeLookupFailed::class]);

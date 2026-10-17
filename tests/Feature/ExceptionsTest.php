@@ -129,6 +129,27 @@ it('reports an unknown default driver with the configuration exception', functio
     GeocodeCache::geocode('Berlin');
 })->throws(InvalidConfigurationException::class, 'Driver [nope] not supported.');
 
+it('reports an empty default driver with the configuration exception', function (mixed $driver) {
+    config(['geocode-cache.driver' => $driver]);
+
+    GeocodeCache::driver();
+})->throws(InvalidConfigurationException::class)->with(['', null]);
+
+it('reports a lock store that is not defined with the configuration exception', function () {
+    config(['geocode-cache.lock.store' => 'redis-locks']);
+    $adapter = FakeAdapter::returning();
+
+    try {
+        (new CachedGeocoder($adapter))->geocode('Berlin');
+
+        $this->fail('The lock store was accepted.');
+    } catch (InvalidConfigurationException $exception) {
+        expect($exception)->toBeInstanceOf(GeocodeCacheException::class)
+            ->and($exception->getMessage())->toContain('redis-locks')
+            ->and($adapter->calls())->toBe(0);
+    }
+});
+
 it('still finds a registered custom driver and the built-in one', function () {
     GeocodeCache::extend('custom', fn () => FakeAdapter::returning());
 

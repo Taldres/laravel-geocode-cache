@@ -27,7 +27,7 @@ these four.
 | --- | --- | --- |
 | `GeocodingFailedException` | `RuntimeException` | The service could not be reached, answered with an error or sent an unusable response. `$exception->reason` holds a fixed code such as `http_503`. |
 | `GeocodingLockTimeoutException` | `GeocodingFailedException` | Another process still looks up the same query after `lock.wait` seconds. The service was not asked, so trying again later is safe. |
-| `InvalidConfigurationException` | `InvalidArgumentException` | A setting, a driver or an adapter is unusable, such as an invalid `ttl_days`, a setting of the wrong type, an unknown driver name, a lock store without atomic locks or a missing API key. It is thrown before the service is called. |
+| `InvalidConfigurationException` | `InvalidArgumentException` | A setting, a driver or an adapter is unusable, such as an invalid `ttl_days`, a setting of the wrong type, an unknown driver name, a lock store that is not defined or has no atomic locks or a missing API key. It is thrown before the service is called. |
 | `UnsupportedQueryException` | `LogicException` | The query is a place ID and the adapter cannot look it up. It is thrown before the cache is read. |
 
 One kind of error is not covered by `GeocodeCacheException` and stays a plain `InvalidArgumentException`: invalid
