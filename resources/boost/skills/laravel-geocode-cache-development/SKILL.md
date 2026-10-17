@@ -180,5 +180,6 @@ altogether.
 - Storing the formatted address or other fields of a Google response next to the coordinates.
 - Passing postal codes as integers.
 - Adding `latitude` and `longitude` columns, or a relation to the cache table, to a model.
+- Calling `refreshUsing()`, `shareWithPlace()` or the classes in `Support`: they are internal. `docs/stability.md` lists what is stable.
 - Catching `GeocodingFailedException` and falling back to older coordinates that are stored elsewhere.
 - Calling the Google API directly for something the cache can answer.

@@ -17,8 +17,6 @@ use Taldres\GeocodeCache\GeocodeCacheManager;
  * @method static bool supports(\Taldres\GeocodeCache\Data\GeocodeQuery|\Taldres\GeocodeCache\Data\PlaceIdQuery $query)
  * @method static \Taldres\GeocodeCache\Data\GeocodeResult|null geocode(\Taldres\GeocodeCache\Data\GeocodeQuery|\Taldres\GeocodeCache\Data\PlaceIdQuery|string $query)
  * @method static \Taldres\GeocodeCache\Enums\RefreshOutcome refresh(\Taldres\GeocodeCache\Data\GeocodeQuery|\Taldres\GeocodeCache\Data\PlaceIdQuery $query, \Carbon\CarbonInterface|null $onlyIfFetchedAt = null)
- * @method static \Taldres\GeocodeCache\Enums\RefreshOutcome refreshUsing(string $hash, \Taldres\GeocodeCache\Data\GeocodeQuery|\Taldres\GeocodeCache\Data\PlaceIdQuery $lookup, \Carbon\CarbonInterface|null $onlyIfFetchedAt = null)
- * @method static int shareWithPlace(string $refreshedHash, iterable<\Taldres\GeocodeCache\Models\GeocodeCacheEntry> $siblings)
  * @method static int retentionDays()
  * @method static int precision()
  *

@@ -110,6 +110,8 @@ final class CachedGeocoder
      * The entry is read again under its lock and left alone if it was deleted, has expired, or is not the one that
      * was fetched at $onlyIfFetchedAt anymore.
      *
+     * @internal Used by geocode-cache:refresh. Call refresh() instead.
+     *
      * @throws GeocodingFailedException
      * @throws UnsupportedQueryException If the lookup is a place ID and the adapter cannot look it up.
      */
@@ -148,6 +150,8 @@ final class CachedGeocoder
      * Copies the fresh result of a refreshed entry to the other entries of the same place, so one service call renews
      * all of them. Each copy is conditional on the state the entry was selected in. An entry that was deleted, has
      * expired or was renewed since then stays as it is. Returns the number of entries that were updated.
+     *
+     * @internal Used by geocode-cache:refresh.
      *
      * @param  iterable<GeocodeCacheEntry>  $siblings
      */
