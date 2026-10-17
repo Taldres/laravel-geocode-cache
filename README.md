@@ -11,6 +11,11 @@ A geocoding cache for Laravel with retention limits and scheduled deletion. It t
 into coordinates, stores the result in your database for a limited time and manages the life cycle of the stored data:
 hard expiry, real deletion, lookups only when needed and no duplicate requests in parallel.
 
+> [!WARNING]
+> The package is below version 1.0. Until then, a minor version (`0.x`) may contain breaking changes. Constrain the
+> version in your `composer.json` to a minor, for example `^0.1`, and read the release notes before you update. See
+> [Versioning and Stable API](docs/stability.md).
+
 ```php
 use Taldres\GeocodeCache\Data\GeocodeQuery;
 use Taldres\GeocodeCache\Facades\GeocodeCache;
