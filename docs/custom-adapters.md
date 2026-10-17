@@ -63,7 +63,7 @@ public function geocodePlaceId(PlaceIdQuery $query): ?Coordinates
 ```
 
 Without it the adapter only answers address queries, and the cache refuses a place ID query for it with a
-`LogicException` instead of searching for something else. The place ID of the `Coordinates` you return is stored and
+`UnsupportedQueryException` instead of searching for something else. The place ID of the `Coordinates` you return is stored and
 handed to the application, which can remember it.
 
 ## The Source
@@ -76,7 +76,7 @@ returns `google`.
 
 `maximumRetentionDays()` is the most days the terms of the provider allow a result to be kept, counted from the fetch, or
 `null` if they set no limit. The retention of the cache never exceeds it: a `ttl_days` or `source_ttl_days` value above
-it is rejected with an `InvalidArgumentException` before the service is called, and an entry that was stored for a
+it is rejected with an `InvalidConfigurationException` before the service is called, and an entry that was stored for a
 longer period is deleted instead of returned. Adapters with the same source must report the same value, because they
 share their entries. The `google` adapter returns 30.
 

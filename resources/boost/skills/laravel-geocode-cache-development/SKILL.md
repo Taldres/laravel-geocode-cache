@@ -1,6 +1,6 @@
 ---
 name: laravel-geocode-cache-development
-description: Geocode addresses, places and postal codes with taldres/laravel-geocode-cache, which caches coordinates in a database table with a hard expiry. Covers the GeocodeCache facade, GeocodeQuery and Bounds, GeocodeResult, the google driver, place ID lookups and keeping coordinates for models, custom adapters, the retention in ttl_days, the geocode-cache:prune command and its scheduler entry, the optional geocode-cache:refresh command, locks against duplicate lookups, error handling with GeocodingFailedException and testing with Http::fake().
+description: Geocode addresses, places and postal codes with taldres/laravel-geocode-cache, which caches coordinates in a database table with a hard expiry. Covers the GeocodeCache facade, GeocodeQuery and Bounds, GeocodeResult, the google driver, place ID lookups and keeping coordinates for models, custom adapters, the retention in ttl_days, the geocode-cache:prune command and its scheduler entry, the optional geocode-cache:refresh command, locks against duplicate lookups, error handling with GeocodingFailedException and the other package exceptions and testing with Http::fake().
 ---
 
 # Laravel Geocode Cache Development
@@ -58,8 +58,11 @@ $result?->expiresAt;  // CarbonInterface: the entry may not be used after this m
 
 - It returns `null` when the service found nothing. Nothing is stored for such a query, so it asks again next time.
 - It throws `Taldres\GeocodeCache\Exceptions\GeocodingFailedException` when the service could not be reached or
-  reported an error, or when another process holds the lock for the same query for longer than `lock.wait`. A failure
-  never returns or extends old data.
+  reported an error. When another process holds the lock for the same query for longer than `lock.wait`, it throws the
+  subclass `GeocodingLockTimeoutException`, which is safe to retry later. A failure never returns or extends old data.
+- The exceptions listed here implement `Taldres\GeocodeCache\Exceptions\GeocodeCacheException`.
+  `InvalidConfigurationException` (an `InvalidArgumentException`) reports an unusable setting, driver or adapter before the
+  service is called, and `UnsupportedQueryException` (a `LogicException`) a place ID for an adapter that cannot look it up.
 - Pass postal codes as strings, `'01067'`, never as integers, and give a country for postal codes and place names.
   The result is a representative point of the area, not a street address.
 - The search text is lower-cased and whitespace-squished, and the country, language, region and bounds are part of the
@@ -83,8 +86,8 @@ $result?->placeId; // remember it on the model yourself, the package never write
 ```
 
 - A place ID is opaque: it is not lower-cased or changed. The `google` adapter can look one up, and a custom adapter
-  can if it implements `SupportsPlaceIdLookup`. For any other adapter the call throws a `LogicException` before the cache
-  is read.
+  can if it implements `SupportsPlaceIdLookup`. For any other adapter the call throws an `UnsupportedQueryException`
+  before the cache is read.
 - Wrap the lookup in a method that is named so the call is visible. Do not call it from accessors that are serialised or
   in loops over many models.
 - `store_place_id` has to be `true` (the default), otherwise there is no place ID to remember.

@@ -21,3 +21,8 @@ arch('adapters implement the adapter contract')
 arch('value objects are immutable')
     ->expect('Taldres\GeocodeCache\Data')
     ->toBeReadonly();
+
+arch('the exceptions of the package share one interface')
+    ->expect('Taldres\GeocodeCache\Exceptions')
+    ->toImplement('Taldres\GeocodeCache\Exceptions\GeocodeCacheException')
+    ->ignoring('Taldres\GeocodeCache\Exceptions\GeocodeCacheException');

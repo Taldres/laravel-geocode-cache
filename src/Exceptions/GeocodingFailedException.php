@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
-class GeocodingFailedException extends RuntimeException
+class GeocodingFailedException extends RuntimeException implements GeocodeCacheException
 {
     /**
      * @param  string  $reason  A fixed code such as "http_503", safe to log, unlike the message.
@@ -44,8 +44,8 @@ class GeocodingFailedException extends RuntimeException
         return new self('The geocoding service returned a response without usable coordinates.', 'malformed_response');
     }
 
-    public static function lockTimeout(): self
+    public static function lockTimeout(): GeocodingLockTimeoutException
     {
-        return new self('Another process is still looking up the same query. Try again in a moment.', 'lock_timeout');
+        return new GeocodingLockTimeoutException;
     }
 }
