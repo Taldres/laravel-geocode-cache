@@ -11,6 +11,8 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
 use Taldres\GeocodeCache\Data\Coordinates;
@@ -18,6 +20,8 @@ use Taldres\GeocodeCache\Data\GeocodeQuery;
 use Taldres\GeocodeCache\Data\GeocodeResult;
 use Taldres\GeocodeCache\Data\PlaceIdQuery;
 use Taldres\GeocodeCache\Enums\RefreshOutcome;
+use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
+use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
 use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
 use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
 use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
@@ -71,11 +75,18 @@ final class CachedGeocoder
             return $result;
         }
 
+        $events = [];
+
         try {
-            return $this->locked($hash, fn (): ?GeocodeResult => $this->findOrFetch($query, $hash));
+            return $this->locked($hash, function () use ($query, $hash, &$events): ?GeocodeResult {
+                return $this->findOrFetch($query, $hash, $events);
+            });
         } catch (LockTimeoutException) {
             // The process that held the lock may have stored the entry just now.
             return $this->find($hash) ?? throw $this->lockTimeout();
+        } finally {
+            // After the lock was released, so a slow listener holds up no other process and may ask for the same query.
+            $this->announce($events);
         }
     }
 
@@ -103,8 +114,10 @@ final class CachedGeocoder
     {
         $this->assertSupported($lookup);
 
+        $events = [];
+
         try {
-            return $this->locked($hash, function () use ($lookup, $hash, $onlyIfFetchedAt): RefreshOutcome {
+            return $this->locked($hash, function () use ($lookup, $hash, $onlyIfFetchedAt, &$events): RefreshOutcome {
                 $current = $this->validEntry($hash);
 
                 if ($current === null || ($onlyIfFetchedAt !== null && ! $current->fetched_at->equalTo($onlyIfFetchedAt))) {
@@ -112,7 +125,7 @@ final class CachedGeocoder
                 }
 
                 $this->track($hash, 'refreshes');
-                $coordinates = $this->lookup($lookup);
+                $coordinates = $this->lookup($lookup, $events);
 
                 if ($coordinates === null) {
                     return RefreshOutcome::NotFound;
@@ -123,6 +136,8 @@ final class CachedGeocoder
         } catch (LockTimeoutException) {
             // No fallback to the old entry: it would count as a request, and as a renewal.
             throw $this->lockTimeout();
+        } finally {
+            $this->announce($events);
         }
     }
 
@@ -240,9 +255,11 @@ final class CachedGeocoder
     }
 
     /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events  Collects the events to dispatch once the lock is released.
+     *
      * @throws GeocodingFailedException
      */
-    private function findOrFetch(GeocodeQuery|PlaceIdQuery $query, string $hash): ?GeocodeResult
+    private function findOrFetch(GeocodeQuery|PlaceIdQuery $query, string $hash, array &$events): ?GeocodeResult
     {
         $result = $this->find($hash);
 
@@ -251,7 +268,7 @@ final class CachedGeocoder
         }
 
         $this->track($hash, 'lookups');
-        $coordinates = $this->lookup($query);
+        $coordinates = $this->lookup($query, $events);
 
         if ($coordinates === null) {
             return null;
@@ -381,9 +398,11 @@ final class CachedGeocoder
     }
 
     /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events  Collects the events to dispatch once the lock is released.
+     *
      * @throws GeocodingFailedException
      */
-    private function lookup(GeocodeQuery|PlaceIdQuery $query): ?Coordinates
+    private function lookup(GeocodeQuery|PlaceIdQuery $query, array &$events): ?Coordinates
     {
         // An invalid setting has to fail before a call that costs money.
         $this->retentionDays();
@@ -395,13 +414,39 @@ final class CachedGeocoder
                 : $this->adapter->geocode($query);
         } catch (GeocodingFailedException $exception) {
             GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => $exception->reason]);
+            $events[] = new GeocodeLookupFailed($this->adapter->source(), $exception->reason);
 
             throw $exception;
         }
 
         GeocodeLog::write('debug', 'The geocoding service was asked.', ['source' => $this->adapter->source(), 'found' => $coordinates !== null]);
+        $events[] = new GeocodeServiceCalled($this->adapter->source(), $coordinates !== null);
 
         return $coordinates;
+    }
+
+    /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events
+     */
+    private function announce(array $events): void
+    {
+        foreach ($events as $event) {
+            // The service was asked and may have been paid for, so a failing listener must not undo the lookup.
+            try {
+                $connection = DB::connection();
+
+                // In the transaction of the application a failed statement of a listener aborts the whole transaction
+                // on PostgreSQL. A savepoint keeps the failure local, as it does for the statistics.
+                if ($connection->transactionLevel() > 0) {
+                    $connection->transaction(fn () => Event::dispatch($event));
+                } else {
+                    Event::dispatch($event);
+                }
+            } catch (Throwable $exception) {
+                GeocodeLog::write('warning', 'A geocode cache event listener failed.', ['event' => $event::class, 'exception' => $exception::class]);
+                report($exception);
+            }
+        }
     }
 
     private function track(string $hash, string $counter): void

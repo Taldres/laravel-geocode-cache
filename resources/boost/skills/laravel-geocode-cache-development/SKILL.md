@@ -1,6 +1,6 @@
 ---
 name: laravel-geocode-cache-development
-description: Geocode addresses, places and postal codes with taldres/laravel-geocode-cache, which caches coordinates in a database table with a hard expiry. Covers the GeocodeCache facade, GeocodeQuery and Bounds, GeocodeResult, the google driver, place ID lookups and keeping coordinates for models, custom adapters, the retention in ttl_days, the geocode-cache:prune command and its scheduler entry, the optional geocode-cache:refresh command, locks against duplicate lookups, error handling with GeocodingFailedException and the other package exceptions and testing with Http::fake().
+description: Geocode addresses, places and postal codes with taldres/laravel-geocode-cache, which caches coordinates in a database table with a hard expiry. Covers the GeocodeCache facade, GeocodeQuery and Bounds, GeocodeResult, the google driver, place ID lookups and keeping coordinates for models, custom adapters, the retention in ttl_days, the geocode-cache:prune command and its scheduler entry, the optional geocode-cache:refresh command, locks against duplicate lookups, error handling with GeocodingFailedException and the other package exceptions, the GeocodeServiceCalled and GeocodeLookupFailed events and testing with Http::fake().
 ---
 
 # Laravel Geocode Cache Development
@@ -134,6 +134,15 @@ command deletes rows older than `GEOCODE_CACHE_STATISTICS_RETENTION_DAYS` (90). 
 Off by default. `GEOCODE_CACHE_LOG_CHANNEL=geocode` writes failed lookups, lock timeouts and the runs of the commands to
 that log channel. It never contains the searched text, the key hash, coordinates, place IDs or the API key, so do not add
 them when you extend the package.
+
+## Events
+
+`Taldres\GeocodeCache\Events\GeocodeServiceCalled` (`source`, `found`) and `GeocodeLookupFailed` (`source`, `reason`) are
+dispatched after a call of the service, never for an answer from the cache. They carry the same data as the log and
+never the searched text, the key hash, coordinates, place IDs or the API key, so do not add them when you extend the
+package. They are dispatched after the lock of the query was released, but before the call returns: keep listeners fast or
+queue them, and do not look the same query up from a listener. A listener that throws does not undo the lookup: the
+package logs it and passes it to `report()`. Test them with `Event::fake()`.
 
 ## Custom Adapters
 

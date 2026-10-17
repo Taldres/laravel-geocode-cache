@@ -82,7 +82,8 @@ if ($result === null) {
 
 A failed lookup throws a `Taldres\GeocodeCache\Exceptions\GeocodingFailedException`, and a lookup that waited in vain for a
 parallel request of the same query a `GeocodingLockTimeoutException`. The exceptions the package defines implement
-`GeocodeCacheException`.
+`GeocodeCacheException`. The `GeocodeServiceCalled` and `GeocodeLookupFailed` events tell your application about calls of
+the service, see [Events](docs/events.md).
 
 ## Limits
 

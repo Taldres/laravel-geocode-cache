@@ -28,6 +28,8 @@ GEOCODE_CACHE_LOG_CHANNEL=geocode
 of the service), `malformed_response`, `lock_timeout` or `unspecified`. It never holds text from the service or
 from a library. The message of the exception is not logged.
 
+The same facts are available as [events](events.md).
+
 ## What Is Never Logged
 
 The searched text, the key hash, coordinates, place IDs and the API key. A log is a copy of data that the package cannot

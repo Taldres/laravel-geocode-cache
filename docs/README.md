@@ -10,6 +10,7 @@
 - [Coordinates for Your Models](models.md): keeping the address or place ID on a model and asking the cache for the rest
 - [Failures, Empty Results and Locks](failures-and-locks.md): how errors, missing results and parallel requests behave
 - [Request Statistics](statistics.md): counting how often and how regularly each query hash is requested
+- [Events](events.md): the two events for a call of the service and a failed lookup
 - [Logging](logging.md): the optional operational log and what it never contains
 - [Refreshing Entries](refreshing.md): renewing entries that are still in use shortly before they expire
 - [Custom Adapters](custom-adapters.md): adding another geocoding service
