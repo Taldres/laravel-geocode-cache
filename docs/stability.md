@@ -3,6 +3,13 @@
 The package follows [Semantic Versioning](https://semver.org). Within a major version, the following parts do not change
 in a way that breaks code written against them. A breaking change needs a new major version.
 
+## Before 1.0
+
+Until version 1.0.0 is released, a minor version (`0.x`) may contain breaking changes, in any of the parts listed below.
+Every breaking change is marked as such in the release notes. Constrain the version in your `composer.json` to a
+minor version, for example `^0.1`, which Composer reads as `>=0.1.0 <0.2.0`, and read the release notes before you raise
+it. The guarantees below apply from 1.0.0 on and describe what the package works towards.
+
 ## Stable
 
 - **The facade and the geocoder:** `GeocodeCache::geocode()`, `refresh()`, `driver()`, `extend()`, `supports()`,
