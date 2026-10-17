@@ -104,3 +104,89 @@ and the cache table stores seven decimals at most, so a larger value is treated 
 `Coordinates` holds the latitude, the longitude and an optional place ID. It is all the cache keeps, so the adapter
 cannot leak other fields of a response into the table. Use `Coordinates::fromResponse()` to build it from untrusted
 response values.
+
+## Wrapping the Google Adapter
+
+The adapters of the package are final. To change how the `google` driver behaves, wrap its adapter in your own one and
+pass every call on. This one keeps the requests to Google below a limit per minute:
+
+```php
+use Illuminate\Support\Facades\RateLimiter;
+use Taldres\GeocodeCache\Adapters\GoogleAdapter;
+use Taldres\GeocodeCache\Contracts\Adapter;
+use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
+use Taldres\GeocodeCache\Data\Coordinates;
+use Taldres\GeocodeCache\Data\GeocodeQuery;
+use Taldres\GeocodeCache\Data\PlaceIdQuery;
+use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
+
+class RateLimitedGoogleAdapter implements Adapter, SupportsPlaceIdLookup
+{
+    public function __construct(private GoogleAdapter $google, private int $perMinute) {}
+
+    public function source(): string
+    {
+        return $this->google->source();
+    }
+
+    public function maximumPrecision(): int
+    {
+        return $this->google->maximumPrecision();
+    }
+
+    public function maximumRetentionDays(): ?int
+    {
+        return $this->google->maximumRetentionDays();
+    }
+
+    public function geocode(GeocodeQuery $query): ?Coordinates
+    {
+        $this->throttle();
+
+        return $this->google->geocode($query);
+    }
+
+    public function geocodePlaceId(PlaceIdQuery $query): ?Coordinates
+    {
+        $this->throttle();
+
+        return $this->google->geocodePlaceId($query);
+    }
+
+    private function throttle(): void
+    {
+        if (RateLimiter::tooManyAttempts('geocode-google', $this->perMinute)) {
+            throw new GeocodingFailedException('The request limit for the geocoding service is reached.', 'rate_limited');
+        }
+
+        RateLimiter::increment('geocode-google');
+    }
+}
+```
+
+Register it under the name `google`. It replaces the built-in driver, so the `driver` setting, `GeocodeCache::driver('google')`
+and `--driver=google` use it:
+
+```php
+use Taldres\GeocodeCache\Adapters\GoogleAdapter;
+use Taldres\GeocodeCache\Facades\GeocodeCache;
+
+GeocodeCache::extend('google', fn () => new RateLimitedGoogleAdapter(
+    new GoogleAdapter(
+        config()->string('geocode-cache.drivers.google.api_key'),
+        timeout: config()->integer('geocode-cache.drivers.google.timeout'),
+    ),
+    perMinute: 50,
+));
+```
+
+- Pass `source()`, `maximumPrecision()` and `maximumRetentionDays()` on unchanged. The wrapper then shares its entries
+  with the plain adapter and keeps the 30 days of Google.
+- Implement `SupportsPlaceIdLookup` as well. Without it the cache refuses place ID queries and `geocode-cache:refresh`
+  cannot renew entries through their place ID.
+- The cache only calls the adapter when it has no valid entry, so cache hits do not count against the limit.
+- A `GeocodingFailedException` from the wrapper is handled like any failure of the service: nothing is stored, and an
+  existing entry stays as it is. Its `reason` reaches the log and `GeocodeLookupFailed`, so use a fixed code, and never
+  put the query into the message.
+- The built-in driver rejects a `timeout` that is not shorter than `lock.seconds`. A driver of your own is not
+  checked, so keep the timeout below the lifetime of the lock yourself.

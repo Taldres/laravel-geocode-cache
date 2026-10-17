@@ -159,6 +159,10 @@ can be set with `source_ttl_days` (`['mapbox' => 365]`) and may exceed 30 days i
 that provider first. Adapter, driver and source are different things: the driver is the configured name, the source is
 the provider that is stored with every entry.
 
+The adapters of the package are final. To change the `google` driver, wrap `GoogleAdapter` in an adapter that implements
+`Adapter` and `SupportsPlaceIdLookup`, passes `source()`, `maximumPrecision()` and `maximumRetentionDays()` on unchanged,
+and register it with `GeocodeCache::extend('google', ...)`. See `docs/custom-adapters.md` for an example.
+
 ## Testing
 
 Fake the HTTP call of the Google adapter. Use a fresh database per test:
