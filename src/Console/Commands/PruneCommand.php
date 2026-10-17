@@ -9,6 +9,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Support\GeocodeLog;
+use Taldres\GeocodeCache\Support\Settings;
 
 #[AsCommand(name: 'geocode-cache:prune', description: 'Delete the expired entries and the old statistics of the geocode cache')]
 class PruneCommand extends Command
@@ -18,7 +19,7 @@ class PruneCommand extends Command
 
     public function handle(): int
     {
-        if (config()->integer('geocode-cache.statistics.retention_days') < 1) {
+        if (Settings::integer('geocode-cache.statistics.retention_days') < 1) {
             $this->components->error('The geocode-cache.statistics.retention_days setting must be 1 or more.');
 
             return self::FAILURE;

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use InvalidArgumentException;
+use Taldres\GeocodeCache\Support\Settings;
 
 /**
  * @property int $id
@@ -31,7 +32,7 @@ class GeocodeCacheStatistic extends Model
 
     public function getTable(): string
     {
-        return config()->string('geocode-cache.statistics.table');
+        return Settings::string('geocode-cache.statistics.table');
     }
 
     public static function record(string $hash, string $counter): void
@@ -60,6 +61,6 @@ class GeocodeCacheStatistic extends Model
      */
     public function prunable(): Builder
     {
-        return static::query()->where('date', '<', Date::now()->utc()->subDays(config()->integer('geocode-cache.statistics.retention_days'))->toDateString());
+        return static::query()->where('date', '<', Date::now()->utc()->subDays(Settings::integer('geocode-cache.statistics.retention_days'))->toDateString());
     }
 }

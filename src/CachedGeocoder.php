@@ -31,6 +31,7 @@ use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Support\GeocodeLog;
 use Taldres\GeocodeCache\Support\LockNotAcquired;
+use Taldres\GeocodeCache\Support\Settings;
 use Throwable;
 
 final class CachedGeocoder
@@ -360,7 +361,7 @@ final class CachedGeocoder
 
         GeocodeCacheEntry::query()
             ->whereKey($entry->getKey())
-            ->where('last_requested_at', '<=', $now->copy()->subSeconds(config()->integer('geocode-cache.refresh.touch_interval')))
+            ->where('last_requested_at', '<=', $now->copy()->subSeconds(Settings::integer('geocode-cache.refresh.touch_interval')))
             ->update(['last_requested_at' => $now]);
     }
 
@@ -381,8 +382,8 @@ final class CachedGeocoder
             throw new InvalidConfigurationException('The cache store of the geocode cache locks does not support atomic locks. Set geocode-cache.lock.store to a store that does, such as redis, database, file or memcached.');
         }
 
-        $seconds = config()->integer('geocode-cache.lock.seconds');
-        $wait = config()->integer('geocode-cache.lock.wait');
+        $seconds = Settings::integer('geocode-cache.lock.seconds');
+        $wait = Settings::integer('geocode-cache.lock.wait');
 
         // A lock without a lifetime would never free itself after a crash.
         if ($seconds < 1 || $wait < 0) {

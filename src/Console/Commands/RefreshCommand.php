@@ -19,6 +19,7 @@ use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
 use Taldres\GeocodeCache\Facades\GeocodeCache;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Support\GeocodeLog;
+use Taldres\GeocodeCache\Support\Settings;
 use Taldres\GeocodeCache\Support\StoredQuery;
 
 #[AsCommand(name: 'geocode-cache:refresh', description: 'Fetch geocode cache entries that are in use again shortly before they expire')]
@@ -159,8 +160,8 @@ class RefreshCommand extends Command
             ->where(fn (Builder $entries) => config('geocode-cache.refresh.store_query')
                 ? $entries->whereNotNull('query_payload')->orWhereNotNull('place_id')
                 : $entries->whereNotNull('place_id'))
-            ->where('expires_at', '<=', $now->copy()->addDays(config()->integer('geocode-cache.refresh.expiring_within_days')))
-            ->where('last_requested_at', '>=', $now->copy()->subDays(config()->integer('geocode-cache.refresh.requested_within_days')));
+            ->where('expires_at', '<=', $now->copy()->addDays(Settings::integer('geocode-cache.refresh.expiring_within_days')))
+            ->where('last_requested_at', '>=', $now->copy()->subDays(Settings::integer('geocode-cache.refresh.requested_within_days')));
     }
 
     /**

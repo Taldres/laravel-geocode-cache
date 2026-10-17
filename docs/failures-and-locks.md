@@ -27,12 +27,12 @@ these four.
 | --- | --- | --- |
 | `GeocodingFailedException` | `RuntimeException` | The service could not be reached, answered with an error or sent an unusable response. `$exception->reason` holds a fixed code such as `http_503`. |
 | `GeocodingLockTimeoutException` | `GeocodingFailedException` | Another process still looks up the same query after `lock.wait` seconds. The service was not asked, so trying again later is safe. |
-| `InvalidConfigurationException` | `InvalidArgumentException` | A setting, a driver or an adapter is unusable, such as an invalid `ttl_days`, a lock store without atomic locks or a missing API key. It is thrown before the service is called. |
+| `InvalidConfigurationException` | `InvalidArgumentException` | A setting, a driver or an adapter is unusable, such as an invalid `ttl_days`, a setting of the wrong type, an unknown driver name, a lock store without atomic locks or a missing API key. It is thrown before the service is called. |
 | `UnsupportedQueryException` | `LogicException` | The query is a place ID and the adapter cannot look it up. It is thrown before the cache is read. |
 
-Some errors are not covered by `GeocodeCacheException` and stay plain: invalid arguments of your own call, such as an
-empty search text or coordinates out of range, and the errors Laravel raises itself, such as an unknown driver name or a
-setting of the wrong type that `config()->integer()` rejects.
+One kind of error is not covered by `GeocodeCacheException` and stays a plain `InvalidArgumentException`: invalid
+arguments of your own call, such as an empty search text or coordinates out of range. An exception that your own
+adapter or a library throws is passed on as it is, see [Custom Adapters](custom-adapters.md).
 
 ```php
 try {

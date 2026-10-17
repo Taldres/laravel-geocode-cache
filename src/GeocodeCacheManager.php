@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Taldres\GeocodeCache;
 
 use Illuminate\Support\Manager;
+use Illuminate\Support\Str;
 use Taldres\GeocodeCache\Adapters\GoogleAdapter;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
+use Taldres\GeocodeCache\Support\Settings;
 
 /**
  * @mixin CachedGeocoder
@@ -16,12 +18,18 @@ class GeocodeCacheManager extends Manager
 {
     public function getDefaultDriver(): string
     {
-        return config()->string('geocode-cache.driver');
+        return Settings::string('geocode-cache.driver');
     }
 
     public function driver($driver = null): CachedGeocoder
     {
-        $geocoder = parent::driver($driver);
+        $name = $driver ?? $this->getDefaultDriver();
+
+        if (! is_string($name) || (! isset($this->customCreators[$name]) && ! method_exists($this, 'create'.Str::studly($name).'Driver'))) {
+            throw new InvalidConfigurationException('Driver ['.(is_string($name) ? $name : get_debug_type($name)).'] not supported.');
+        }
+
+        $geocoder = parent::driver($name);
 
         if (! $geocoder instanceof CachedGeocoder) {
             throw new InvalidConfigurationException('The driver must return a CachedGeocoder or an Adapter.');
