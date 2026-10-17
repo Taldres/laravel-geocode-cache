@@ -1,0 +1,117 @@
+{
+  "$schema": "https://getcomposer.org/schema.json",
+  "name": "taldres/laravel-geocode-cache",
+  "description": "A geocoding cache for Laravel with retention limits, scheduled deletion and locks against duplicate lookups.",
+  "keywords": [
+    "laravel",
+    "geocoding",
+    "geocode",
+    "cache",
+    "google-maps",
+    "coordinates"
+  ],
+  "homepage": "https://github.com/Taldres/laravel-geocode-cache",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dennis Petersmann",
+      "email": "dennis@petersmann.dev",
+      "homepage": "https://github.com/Taldres",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/Taldres/laravel-geocode-cache/issues",
+    "source": "https://github.com/Taldres/laravel-geocode-cache",
+    "security": "https://github.com/Taldres/laravel-geocode-cache/security/policy"
+  },
+  "require": {
+    "php": "^8.3",
+    "illuminate/cache": "^12.0||^13.0",
+    "illuminate/console": "^12.0||^13.0",
+    "illuminate/contracts": "^12.0||^13.0",
+    "illuminate/database": "^12.0||^13.0",
+    "illuminate/encryption": "^12.0||^13.0",
+    "illuminate/http": "^12.0||^13.0",
+    "illuminate/support": "^12.0||^13.0"
+  },
+  "require-dev": {
+    "larastan/larastan": "^3.9",
+    "laravel/boost": "^2.0",
+    "laravel/pint": "^1.29",
+    "orchestra/testbench": "^10.0||^11.0",
+    "pestphp/pest": "^4.6||^5.0",
+    "pestphp/pest-plugin-laravel": "^4.1||^5.0",
+    "pestphp/pest-plugin-type-coverage": "^4.0||^5.0",
+    "phpstan/extension-installer": "^1.4",
+    "symfony/yaml": "^7.2||^8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Taldres\\GeocodeCache\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Taldres\\GeocodeCache\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Taldres\\GeocodeCache\\GeocodeCacheServiceProvider"
+      ]
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "phpstan/extension-installer": true
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "scripts": {
+    "post-autoload-dump": [
+      "@clear",
+      "@prepare"
+    ],
+    "prepare": [
+      "@php vendor/bin/testbench package:discover --ansi"
+    ],
+    "clear": [
+      "@php vendor/bin/testbench package:purge-skeleton --ansi"
+    ],
+    "lint": [
+      "vendor/bin/pint --parallel"
+    ],
+    "lint:check": [
+      "vendor/bin/pint --parallel --test"
+    ],
+    "analyse": [
+      "vendor/bin/phpstan analyse --memory-limit=2G"
+    ],
+    "test:types": [
+      "@php -d memory_limit=2G vendor/bin/pest --type-coverage --min=100"
+    ],
+    "test:unit": [
+      "vendor/bin/pest"
+    ],
+    "test": [
+      "@analyse",
+      "@lint:check",
+      "@test:types",
+      "@test:unit"
+    ]
+  },
+  "scripts-descriptions": {
+    "lint": "Fix the code style with Pint.",
+    "lint:check": "Check the code style with Pint without changing files.",
+    "analyse": "Run the static analysis with PHPStan.",
+    "test:types": "Check that the type coverage is 100%.",
+    "test:unit": "Run the Pest test suite.",
+    "test": "Run all checks without changing files."
+  }
+}

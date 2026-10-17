@@ -1,0 +1,7 @@
+laravel: '@testbench'
+
+providers:
+  - Taldres\GeocodeCache\GeocodeCacheServiceProvider
+
+migrations:
+  - database/migrations
