@@ -10,7 +10,7 @@ the [log](logging.md). They carry the same data as the log lines of the same nam
 
 `source` is the source of the adapter, such as `google`. `found` is `false` for an empty result. `reason` is the fixed
 code of the `GeocodingFailedException` (`connection`, `http_503`, `status_REQUEST_DENIED`, `malformed_response` or
-`unspecified`), never text from the service.
+`unspecified`), or `unexpected` if the adapter threw something else. It is never text from the service.
 
 ```php
 use Illuminate\Support\Facades\Event;
@@ -32,8 +32,8 @@ Event::listen(GeocodeLookupFailed::class, fn (GeocodeLookupFailed $event) => Met
 ## Guarantees
 
 An event is dispatched at most once per call of the service. If the process dies between the answer of the service and
-the end of the call, the event is lost. Only a `GeocodingFailedException` produces `GeocodeLookupFailed`: a custom
-adapter has to throw it, see [Custom Adapters](custom-adapters.md). Two processes may dispatch their events in a
+the end of the call, the event is lost. A failed call of the service produces `GeocodeLookupFailed`, with the reason `unexpected` if the
+adapter threw something other than a `GeocodingFailedException`, see [Custom Adapters](custom-adapters.md). Two processes may dispatch their events in a
 different order than their service calls happened.
 
 ## Never Carried

@@ -22,6 +22,7 @@ use Taldres\GeocodeCache\Data\PlaceIdQuery;
 use Taldres\GeocodeCache\Enums\RefreshOutcome;
 use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
 use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
+use Taldres\GeocodeCache\Exceptions\GeocodeCacheException;
 use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
 use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
 use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
@@ -29,6 +30,7 @@ use Taldres\GeocodeCache\Exceptions\UnsupportedQueryException;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Support\GeocodeLog;
+use Taldres\GeocodeCache\Support\LockNotAcquired;
 use Throwable;
 
 final class CachedGeocoder
@@ -81,7 +83,7 @@ final class CachedGeocoder
             return $this->locked($hash, function () use ($query, $hash, &$events): ?GeocodeResult {
                 return $this->findOrFetch($query, $hash, $events);
             });
-        } catch (LockTimeoutException) {
+        } catch (LockNotAcquired) {
             // The process that held the lock may have stored the entry just now.
             return $this->find($hash) ?? throw $this->lockTimeout();
         } finally {
@@ -133,7 +135,7 @@ final class CachedGeocoder
 
                 return $this->replace($current, $this->build($lookup, $hash, $coordinates)) ? RefreshOutcome::Refreshed : RefreshOutcome::Skipped;
             });
-        } catch (LockTimeoutException) {
+        } catch (LockNotAcquired) {
             // No fallback to the old entry: it would count as a request, and as a renewal.
             throw $this->lockTimeout();
         } finally {
@@ -368,7 +370,7 @@ final class CachedGeocoder
      * @param  Closure(): TResult  $callback
      * @return TResult
      *
-     * @throws LockTimeoutException If another process still holds the lock after lock.wait seconds.
+     * @throws LockNotAcquired If another process still holds the lock after lock.wait seconds.
      */
     private function locked(string $hash, Closure $callback): mixed
     {
@@ -388,7 +390,12 @@ final class CachedGeocoder
         }
 
         $lock = $store->lock("geocode-cache:{$hash}", $seconds);
-        $lock->block($wait);
+
+        try {
+            $lock->block($wait);
+        } catch (LockTimeoutException) {
+            throw new LockNotAcquired;
+        }
 
         try {
             return $callback();
@@ -415,6 +422,15 @@ final class CachedGeocoder
         } catch (GeocodingFailedException $exception) {
             GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => $exception->reason]);
             $events[] = new GeocodeLookupFailed($this->adapter->source(), $exception->reason);
+
+            throw $exception;
+        } catch (GeocodeCacheException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            // An adapter should throw a GeocodingFailedException. Anything else is passed on unchanged, because its
+            // message may hold the request URL, but the call may have been paid for, so it is logged and announced.
+            GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => 'unexpected']);
+            $events[] = new GeocodeLookupFailed($this->adapter->source(), 'unexpected');
 
             throw $exception;
         }

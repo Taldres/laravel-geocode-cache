@@ -147,7 +147,8 @@ package logs it and passes it to `report()`. Test them with `Event::fake()`.
 ## Custom Adapters
 
 Implement `Taldres\GeocodeCache\Contracts\Adapter` (`source()`, `maximumPrecision()`, `maximumRetentionDays()` and `geocode(GeocodeQuery): ?Coordinates`, throwing
-`GeocodingFailedException` on failure) and register it. The manager wraps it in the cache:
+`GeocodingFailedException` on failure, translating the exceptions of the HTTP client; anything else escapes unchanged and is
+logged and announced with the reason `unexpected`) and register it. The manager wraps it in the cache:
 
 ```php
 GeocodeCache::extend('mapbox', fn () => new MapboxAdapter(config('services.mapbox.token')));
