@@ -111,7 +111,8 @@ it('does not count a request that could not get the entry or the lock', function
 });
 
 it('does not break a lookup when the counters cannot be written', function () {
-    Schema::drop('geocode_cache_statistics');
+    // No DDL here: on MySQL and MariaDB it commits the transaction of the test and voids its savepoints.
+    config(['geocode-cache.statistics.table' => 'missing_statistics']);
 
     expect((new CachedGeocoder(FakeAdapter::returning()))->geocode('Berlin'))->not->toBeNull();
 });
