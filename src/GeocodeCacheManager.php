@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Taldres\GeocodeCache;
 
 use Illuminate\Support\Manager;
-use InvalidArgumentException;
 use Taldres\GeocodeCache\Adapters\GoogleAdapter;
 use Taldres\GeocodeCache\Contracts\Adapter;
+use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
 
 /**
  * @mixin CachedGeocoder
@@ -24,7 +24,7 @@ class GeocodeCacheManager extends Manager
         $geocoder = parent::driver($driver);
 
         if (! $geocoder instanceof CachedGeocoder) {
-            throw new InvalidArgumentException('The driver must return a CachedGeocoder or an Adapter.');
+            throw new InvalidConfigurationException('The driver must return a CachedGeocoder or an Adapter.');
         }
 
         return $geocoder;
@@ -61,7 +61,7 @@ class GeocodeCacheManager extends Manager
     /**
      * @param  array<array-key, mixed>  $config
      *
-     * @throws InvalidArgumentException
+     * @throws InvalidConfigurationException
      */
     private function timeout(array $config): int
     {
@@ -71,7 +71,7 @@ class GeocodeCacheManager extends Manager
         // A lock that frees itself while the service still answers would let a second process ask for the same query.
         // An invalid lifetime is reported by the lock itself.
         if (is_int($lifetime) && $lifetime >= 1 && $timeout >= $lifetime) {
-            throw new InvalidArgumentException('The driver timeout must be shorter than geocode-cache.lock.seconds.');
+            throw new InvalidConfigurationException('The driver timeout must be shorter than geocode-cache.lock.seconds.');
         }
 
         return $timeout;

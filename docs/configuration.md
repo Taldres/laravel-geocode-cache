@@ -15,7 +15,7 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `drivers.google.endpoint` | none | Google's endpoint | The geocoding endpoint. |
 | `drivers.google.timeout` | none | `5` | Seconds to wait for the service. |
 | `lock.store` | `GEOCODE_CACHE_LOCK_STORE` | default cache store | The cache store that holds the locks. |
-| `lock.seconds` | none | `30` | Seconds until a lock frees itself. It must exceed the driver timeout, otherwise the driver is rejected with an `InvalidArgumentException`. |
+| `lock.seconds` | none | `30` | Seconds until a lock frees itself. It must exceed the driver timeout, otherwise the driver is rejected with an `InvalidConfigurationException`. |
 | `lock.wait` | none | `10` | Seconds a request waits for a parallel lookup of the same query. |
 | `statistics.enabled` | `GEOCODE_CACHE_STATISTICS_ENABLED` | `false` | Counts requests per hash and day. See [Request Statistics](statistics.md). |
 | `statistics.table` | `GEOCODE_CACHE_STATISTICS_TABLE` | `geocode_cache_statistics` | The name of the statistics table. Set it before you run the migration. |
@@ -28,14 +28,14 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `refresh.touch_interval` | none | `3600` | Seconds between two writes of the last request time of an entry. |
 | `refresh.limit` | none | `100` | The maximum number of service calls of one refresh run. Entries of the same place share a call. |
 
-An invalid `ttl_days` is rejected with an `InvalidArgumentException` before the service is called: zero, negative,
+An invalid `ttl_days` is rejected with an `InvalidConfigurationException` before the service is called: zero, negative,
 not an integer, or above the maximum of the adapter (30 for results from Google). `source_ttl_days` holds the retention
 of a source, because the terms of a provider decide it and drivers with the same source share their entries.
 
 `precision` decides how exact the stored position is: 4 decimals are about 11 metres, 2 are about 1.1 kilometres. A coarser
 position is also less sensitive data. The maximum depends on the adapter, because it reports what its service
 delivers (`Adapter::maximumPrecision()`). The built-in `google` adapter delivers 7 decimals. A larger value
-is rejected with an `InvalidArgumentException` before the service is called, and the table never stores more than 7
+is rejected with an `InvalidConfigurationException` before the service is called, and the table never stores more than 7
 decimals. The precision is not part of the cache key, so existing entries keep the precision they were stored with.
 
 Adapters that read from the same provider share their cache entries, see [Custom Adapters](custom-adapters.md). Changing

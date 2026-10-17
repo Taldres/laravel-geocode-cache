@@ -42,7 +42,7 @@ These are the point of the package. Do not weaken them without an explicit decis
 - A failed or empty lookup never changes a stored entry.
 - Only the coordinates and the optional place ID of a response are stored, never the formatted address or other fields. The query is stored encrypted only with `refresh.store_query`.
 - The default retention is 29 days. An adapter reports the maximum for its source and the cache never exceeds it. For results from Google that is 30 days. The retention belongs to the source (`source_ttl_days`), not to a driver.
-- The package log (`Support\GeocodeLog`) and exception messages never contain the searched text, coordinates, place IDs or hashes.
+- The package log (`Support\GeocodeLog`), the events and exception messages never contain the searched text, coordinates, place IDs or hashes.
 - The statistics hold counters per hash and day only, never a query, coordinates or a place ID.
 - Exception messages never contain the request URL, because it holds the API key and the searched address.
 - The cache key covers every parameter that influences the result.

@@ -11,8 +11,8 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
-use InvalidArgumentException;
-use LogicException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
 use Taldres\GeocodeCache\Data\Coordinates;
@@ -20,7 +20,12 @@ use Taldres\GeocodeCache\Data\GeocodeQuery;
 use Taldres\GeocodeCache\Data\GeocodeResult;
 use Taldres\GeocodeCache\Data\PlaceIdQuery;
 use Taldres\GeocodeCache\Enums\RefreshOutcome;
+use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
+use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
 use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
+use Taldres\GeocodeCache\Exceptions\GeocodingLockTimeoutException;
+use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
+use Taldres\GeocodeCache\Exceptions\UnsupportedQueryException;
 use Taldres\GeocodeCache\Models\GeocodeCacheEntry;
 use Taldres\GeocodeCache\Models\GeocodeCacheStatistic;
 use Taldres\GeocodeCache\Support\GeocodeLog;
@@ -53,7 +58,7 @@ final class CachedGeocoder
 
     /**
      * @throws GeocodingFailedException
-     * @throws LogicException If the query is a place ID and the adapter cannot look it up.
+     * @throws UnsupportedQueryException If the query is a place ID and the adapter cannot look it up.
      */
     public function geocode(GeocodeQuery|PlaceIdQuery|string $query): ?GeocodeResult
     {
@@ -70,11 +75,18 @@ final class CachedGeocoder
             return $result;
         }
 
+        $events = [];
+
         try {
-            return $this->locked($hash, fn (): ?GeocodeResult => $this->findOrFetch($query, $hash));
+            return $this->locked($hash, function () use ($query, $hash, &$events): ?GeocodeResult {
+                return $this->findOrFetch($query, $hash, $events);
+            });
         } catch (LockTimeoutException) {
             // The process that held the lock may have stored the entry just now.
             return $this->find($hash) ?? throw $this->lockTimeout();
+        } finally {
+            // After the lock was released, so a slow listener holds up no other process and may ask for the same query.
+            $this->announce($events);
         }
     }
 
@@ -82,7 +94,7 @@ final class CachedGeocoder
      * Fetches the entry of the query again.
      *
      * @throws GeocodingFailedException
-     * @throws LogicException If the query is a place ID and the adapter cannot look it up.
+     * @throws UnsupportedQueryException If the query is a place ID and the adapter cannot look it up.
      */
     public function refresh(GeocodeQuery|PlaceIdQuery $query, ?CarbonInterface $onlyIfFetchedAt = null): RefreshOutcome
     {
@@ -96,14 +108,16 @@ final class CachedGeocoder
      * was fetched at $onlyIfFetchedAt anymore.
      *
      * @throws GeocodingFailedException
-     * @throws LogicException If the lookup is a place ID and the adapter cannot look it up.
+     * @throws UnsupportedQueryException If the lookup is a place ID and the adapter cannot look it up.
      */
     public function refreshUsing(string $hash, GeocodeQuery|PlaceIdQuery $lookup, ?CarbonInterface $onlyIfFetchedAt = null): RefreshOutcome
     {
         $this->assertSupported($lookup);
 
+        $events = [];
+
         try {
-            return $this->locked($hash, function () use ($lookup, $hash, $onlyIfFetchedAt): RefreshOutcome {
+            return $this->locked($hash, function () use ($lookup, $hash, $onlyIfFetchedAt, &$events): RefreshOutcome {
                 $current = $this->validEntry($hash);
 
                 if ($current === null || ($onlyIfFetchedAt !== null && ! $current->fetched_at->equalTo($onlyIfFetchedAt))) {
@@ -111,7 +125,7 @@ final class CachedGeocoder
                 }
 
                 $this->track($hash, 'refreshes');
-                $coordinates = $this->lookup($lookup);
+                $coordinates = $this->lookup($lookup, $events);
 
                 if ($coordinates === null) {
                     return RefreshOutcome::NotFound;
@@ -122,6 +136,8 @@ final class CachedGeocoder
         } catch (LockTimeoutException) {
             // No fallback to the old entry: it would count as a request, and as a renewal.
             throw $this->lockTimeout();
+        } finally {
+            $this->announce($events);
         }
     }
 
@@ -168,7 +184,7 @@ final class CachedGeocoder
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws InvalidConfigurationException
      */
     public function retentionDays(): int
     {
@@ -177,7 +193,7 @@ final class CachedGeocoder
         $perSource = config('geocode-cache.source_ttl_days');
 
         if ($perSource !== null && ! is_array($perSource)) {
-            throw new InvalidArgumentException('The geocode-cache.source_ttl_days setting must be a map of sources to days.');
+            throw new InvalidConfigurationException('The geocode-cache.source_ttl_days setting must be a map of sources to days.');
         }
 
         // The source is looked up as a plain key, because a name with a dot is no path.
@@ -190,39 +206,39 @@ final class CachedGeocoder
         }
 
         if (! is_int($days) || $days < 1) {
-            throw new InvalidArgumentException("The {$setting} setting must be a whole number of days of 1 or more.");
+            throw new InvalidConfigurationException("The {$setting} setting must be a whole number of days of 1 or more.");
         }
 
         if ($maximum !== null && $days > $maximum) {
-            throw new InvalidArgumentException("The {$setting} setting must not exceed {$maximum} days for results from {$source}.");
+            throw new InvalidConfigurationException("The {$setting} setting must not exceed {$maximum} days for results from {$source}.");
         }
 
         return $days;
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws InvalidConfigurationException
      */
     private function maximumRetentionDays(): ?int
     {
         $maximum = $this->adapter->maximumRetentionDays();
 
         if ($maximum !== null && $maximum < 1) {
-            throw new InvalidArgumentException('The adapter reports a maximum retention below one day.');
+            throw new InvalidConfigurationException('The adapter reports a maximum retention below one day.');
         }
 
         return $maximum;
     }
 
     /**
-     * @throws InvalidArgumentException
+     * @throws InvalidConfigurationException
      */
     public function precision(): int
     {
         $maximum = min($this->adapter->maximumPrecision(), Coordinates::MAXIMUM_PRECISION);
 
         if ($maximum < 0) {
-            throw new InvalidArgumentException('The adapter reports a negative maximum precision.');
+            throw new InvalidConfigurationException('The adapter reports a negative maximum precision.');
         }
 
         $precision = config('geocode-cache.precision');
@@ -232,16 +248,18 @@ final class CachedGeocoder
         }
 
         if (! is_int($precision) || $precision < 0 || $precision > $maximum) {
-            throw new InvalidArgumentException("The geocode-cache.precision setting must be empty or a whole number from 0 to {$maximum} for this adapter.");
+            throw new InvalidConfigurationException("The geocode-cache.precision setting must be empty or a whole number from 0 to {$maximum} for this adapter.");
         }
 
         return $precision;
     }
 
     /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events  Collects the events to dispatch once the lock is released.
+     *
      * @throws GeocodingFailedException
      */
-    private function findOrFetch(GeocodeQuery|PlaceIdQuery $query, string $hash): ?GeocodeResult
+    private function findOrFetch(GeocodeQuery|PlaceIdQuery $query, string $hash, array &$events): ?GeocodeResult
     {
         $result = $this->find($hash);
 
@@ -250,7 +268,7 @@ final class CachedGeocoder
         }
 
         $this->track($hash, 'lookups');
-        $coordinates = $this->lookup($query);
+        $coordinates = $this->lookup($query, $events);
 
         if ($coordinates === null) {
             return null;
@@ -358,7 +376,7 @@ final class CachedGeocoder
         $store = Cache::store(is_string($name) && $name !== '' ? $name : null)->getStore();
 
         if (! $store instanceof LockProvider) {
-            throw new LogicException('The cache store of the geocode cache locks does not support atomic locks. Set geocode-cache.lock.store to a store that does, such as redis, database, file or memcached.');
+            throw new InvalidConfigurationException('The cache store of the geocode cache locks does not support atomic locks. Set geocode-cache.lock.store to a store that does, such as redis, database, file or memcached.');
         }
 
         $seconds = config()->integer('geocode-cache.lock.seconds');
@@ -366,7 +384,7 @@ final class CachedGeocoder
 
         // A lock without a lifetime would never free itself after a crash.
         if ($seconds < 1 || $wait < 0) {
-            throw new InvalidArgumentException('The geocode-cache.lock.seconds setting must be 1 or more and lock.wait must be 0 or more.');
+            throw new InvalidConfigurationException('The geocode-cache.lock.seconds setting must be 1 or more and lock.wait must be 0 or more.');
         }
 
         $lock = $store->lock("geocode-cache:{$hash}", $seconds);
@@ -380,9 +398,11 @@ final class CachedGeocoder
     }
 
     /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events  Collects the events to dispatch once the lock is released.
+     *
      * @throws GeocodingFailedException
      */
-    private function lookup(GeocodeQuery|PlaceIdQuery $query): ?Coordinates
+    private function lookup(GeocodeQuery|PlaceIdQuery $query, array &$events): ?Coordinates
     {
         // An invalid setting has to fail before a call that costs money.
         $this->retentionDays();
@@ -394,13 +414,39 @@ final class CachedGeocoder
                 : $this->adapter->geocode($query);
         } catch (GeocodingFailedException $exception) {
             GeocodeLog::write('warning', 'The geocoding lookup failed.', ['source' => $this->adapter->source(), 'reason' => $exception->reason]);
+            $events[] = new GeocodeLookupFailed($this->adapter->source(), $exception->reason);
 
             throw $exception;
         }
 
         GeocodeLog::write('debug', 'The geocoding service was asked.', ['source' => $this->adapter->source(), 'found' => $coordinates !== null]);
+        $events[] = new GeocodeServiceCalled($this->adapter->source(), $coordinates !== null);
 
         return $coordinates;
+    }
+
+    /**
+     * @param  list<GeocodeLookupFailed|GeocodeServiceCalled>  $events
+     */
+    private function announce(array $events): void
+    {
+        foreach ($events as $event) {
+            // The service was asked and may have been paid for, so a failing listener must not undo the lookup.
+            try {
+                $connection = DB::connection();
+
+                // In the transaction of the application a failed statement of a listener aborts the whole transaction
+                // on PostgreSQL. A savepoint keeps the failure local, as it does for the statistics.
+                if ($connection->transactionLevel() > 0) {
+                    $connection->transaction(fn () => Event::dispatch($event));
+                } else {
+                    Event::dispatch($event);
+                }
+            } catch (Throwable $exception) {
+                GeocodeLog::write('warning', 'A geocode cache event listener failed.', ['event' => $event::class, 'exception' => $exception::class]);
+                report($exception);
+            }
+        }
     }
 
     private function track(string $hash, string $counter): void
@@ -425,7 +471,7 @@ final class CachedGeocoder
     }
 
     /**
-     * @throws LogicException
+     * @throws UnsupportedQueryException
      */
     private function assertSupported(GeocodeQuery|PlaceIdQuery $query): void
     {
@@ -435,22 +481,22 @@ final class CachedGeocoder
     }
 
     /**
-     * @throws LogicException
+     * @throws UnsupportedQueryException
      */
     private function placeIds(): SupportsPlaceIdLookup
     {
         if (! $this->adapter instanceof SupportsPlaceIdLookup) {
-            throw new LogicException('The adapter ['.$this->adapter::class.'] cannot look a place ID up. Use a driver that can, such as google.');
+            throw new UnsupportedQueryException('The adapter ['.$this->adapter::class.'] cannot look a place ID up. Use a driver that can, such as google.');
         }
 
         return $this->adapter;
     }
 
-    private function lockTimeout(): GeocodingFailedException
+    private function lockTimeout(): GeocodingLockTimeoutException
     {
         GeocodeLog::write('warning', 'A geocoding lookup gave up waiting for the lock of the same query.', ['source' => $this->adapter->source()]);
 
-        return GeocodingFailedException::lockTimeout();
+        return new GeocodingLockTimeoutException;
     }
 
     private function build(GeocodeQuery|PlaceIdQuery $query, string $hash, Coordinates $coordinates): GeocodeCacheEntry

@@ -18,6 +18,32 @@ period.
 The messages of `GeocodingFailedException` do not contain the request URL, because it holds the API key and the
 searched address or place ID.
 
+## Exceptions
+
+All of them live in `Taldres\GeocodeCache\Exceptions` and implement `GeocodeCacheException`, so one `catch` handles
+these four.
+
+| Exception | Extends | Thrown when |
+| --- | --- | --- |
+| `GeocodingFailedException` | `RuntimeException` | The service could not be reached, answered with an error or sent an unusable response. `$exception->reason` holds a fixed code such as `http_503`. |
+| `GeocodingLockTimeoutException` | `GeocodingFailedException` | Another process still looks up the same query after `lock.wait` seconds. The service was not asked, so trying again later is safe. |
+| `InvalidConfigurationException` | `InvalidArgumentException` | A setting, a driver or an adapter is unusable, such as an invalid `ttl_days`, a lock store without atomic locks or a missing API key. It is thrown before the service is called. |
+| `UnsupportedQueryException` | `LogicException` | The query is a place ID and the adapter cannot look it up. It is thrown before the cache is read. |
+
+Some errors are not covered by `GeocodeCacheException` and stay plain: invalid arguments of your own call, such as an
+empty search text or coordinates out of range, and the errors Laravel raises itself, such as an unknown driver name or a
+setting of the wrong type that `config()->integer()` rejects.
+
+```php
+try {
+    $result = GeocodeCache::geocode($query);
+} catch (GeocodingLockTimeoutException) {
+    // Try again in a moment, for example by releasing the queued job back to the queue.
+} catch (GeocodingFailedException $exception) {
+    report($exception);
+}
+```
+
 ## Parallel Requests
 
 A lock per query stops parallel requests from calling the service for the same query:
@@ -27,11 +53,12 @@ A lock per query stops parallel requests from calling the service for the same q
 3. Only if there is still none, it calls the service, stores the result and releases the lock.
 
 A request that cannot get the lock waits up to `lock.wait` seconds. If the lock is still taken, it uses the entry if one
-appeared and otherwise throws a `GeocodingFailedException`. Locks of different queries do not block each other.
+appeared and otherwise throws a `GeocodingLockTimeoutException`, a `GeocodingFailedException` that you can catch to try
+again. Locks of different queries do not block each other.
 
 The lock needs a cache store with atomic locks. Set `lock.store` (or `GEOCODE_CACHE_LOCK_STORE`) if your default store
 has none, for example the `array` store in production or a store without lock support. `lock.seconds` must exceed the
-timeout of the driver, otherwise the driver is rejected with an `InvalidArgumentException`.
+timeout of the driver, otherwise the driver is rejected with an `InvalidConfigurationException`.
 
 `lock.seconds` must be 1 or more and `lock.wait` 0 or more, otherwise a lookup fails before the service is called.
 

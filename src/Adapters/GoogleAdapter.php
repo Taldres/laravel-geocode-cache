@@ -8,7 +8,6 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use InvalidArgumentException;
 use Taldres\GeocodeCache\Contracts\Adapter;
 use Taldres\GeocodeCache\Contracts\SupportsPlaceIdLookup;
 use Taldres\GeocodeCache\Data\Bounds;
@@ -16,6 +15,7 @@ use Taldres\GeocodeCache\Data\Coordinates;
 use Taldres\GeocodeCache\Data\GeocodeQuery;
 use Taldres\GeocodeCache\Data\PlaceIdQuery;
 use Taldres\GeocodeCache\Exceptions\GeocodingFailedException;
+use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
 
 final readonly class GoogleAdapter implements Adapter, SupportsPlaceIdLookup
 {
@@ -30,7 +30,7 @@ final readonly class GoogleAdapter implements Adapter, SupportsPlaceIdLookup
         private int $timeout = 5,
     ) {
         if ($apiKey === '') {
-            throw new InvalidArgumentException('The Google Geocoding API key is not set.');
+            throw new InvalidConfigurationException('The Google Geocoding API key is not set.');
         }
     }
 

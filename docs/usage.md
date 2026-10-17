@@ -48,7 +48,7 @@ and bounds do not apply. It returns `null` if the service does not know the plac
 address instead. [Coordinates for Your Models](models.md) shows how.
 
 The `google` adapter can look a place ID up. A [custom adapter](custom-adapters.md#place-ids) can as well, if it
-implements the optional interface. For an adapter that cannot, the call throws a `LogicException` before the cache is
+implements the optional interface. For an adapter that cannot, the call throws an `UnsupportedQueryException` (a `LogicException`) before the cache is
 read, so the answer does not depend on what happens to be stored. `GeocodeCache::driver()->supports($query)` tells
 beforehand.
 
