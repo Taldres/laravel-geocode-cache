@@ -4,10 +4,8 @@
 
 - PHP 8.3 or higher
 - Laravel 12 or 13
-- A database that supports Eloquent upserts: SQLite, MySQL, MariaDB or PostgreSQL. The test workflow targets SQLite, MySQL,
-  MariaDB and PostgreSQL.
-- A cache store that supports atomic locks, such as `redis`, `database`, `file` or `memcached`, for the locks against
-  parallel lookups
+- SQLite, MySQL, MariaDB or PostgreSQL
+- A cache store with atomic locks (`redis`, `database`, `file` or `memcached`) for the locks against parallel lookups
 - A Google Geocoding API key
 
 ## Install the Package
@@ -16,10 +14,8 @@
 composer require taldres/laravel-geocode-cache
 ```
 
-## Publish and Migrate
-
-If the default table name `geocode_cache` does not fit, publish the configuration and change `table` first. Then
-publish the migration and migrate:
+Publish the configuration and the migration, then migrate. If the default table name `geocode_cache` does not fit,
+change `table` in the published configuration before you migrate:
 
 ```bash
 php artisan vendor:publish --tag=geocode-cache
@@ -38,8 +34,8 @@ Restrict the key in the Google Cloud console to the Geocoding API and to the IP 
 
 ## Schedule the Pruning
 
-This step is required. The package never returns an expired entry, but it can only delete entries nobody asks for again
-with a command that runs regularly. Add it to `routes/console.php`:
+This step is required. The package never returns an expired entry, but only a command that runs regularly deletes the
+entries nobody asks for again. Add it to `routes/console.php`:
 
 ```php
 use Illuminate\Support\Facades\Schedule;
@@ -47,10 +43,8 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('geocode-cache:prune')->hourly()->onOneServer()->withoutOverlapping();
 ```
 
-The same command deletes statistics rows that are older than `statistics.retention_days`. The default retention of 29 days leaves one day below the maximum of 30 days for results from Google. That distance gives the schedule room,
-it does not replace a scheduler that actually runs, so monitor it. Laravel offers `pingOnFailure` and similar hooks for
-that.
-
+The default retention of 29 days leaves one day below the maximum of 30 days for results from Google. That day gives
+the schedule room. It does not replace a scheduler that actually runs, so monitor it, for example with `pingOnFailure()`.
 The scheduler itself needs its usual cron entry: `* * * * * cd /path-to-your-project && php artisan schedule:run`.
 
 ## Check the Setup
@@ -60,3 +54,9 @@ php artisan about --only=geocode_cache
 ```
 
 It shows the driver, the table, the retention and whether the prune command is scheduled.
+
+## Laravel Boost
+
+The package ships a [Laravel Boost](https://laravel.com/docs/boost) skill and a short guideline for coding agents.
+`php artisan boost:install` offers them, `php artisan boost:update --discover` adds them to an existing setup, and
+`boost:update` keeps them current.

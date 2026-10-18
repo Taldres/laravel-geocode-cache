@@ -13,8 +13,7 @@ hard expiry, real deletion, lookups only when needed and no duplicate requests i
 
 > [!WARNING]
 > The package is below version 1.0. Until then, a minor version (`0.x`) may contain breaking changes. Constrain the
-> version in your `composer.json` to a minor, for example `^0.1`, and read the release notes before you update. See
-> [Versioning and Stable API](docs/stability.md).
+> version in your `composer.json` to a minor, for example `^0.1`, and read the release notes before you update.
 
 ```php
 use Taldres\GeocodeCache\Data\GeocodeQuery;
@@ -70,37 +69,27 @@ Check the setup with `php artisan about --only=geocode_cache`.
 ## Usage
 
 ```php
-// Postal codes are strings, so leading zeros survive. Give a country to avoid ambiguity.
-$result = GeocodeCache::geocode(GeocodeQuery::make('01067', country: 'DE'));
-
 // An address with more parameters. All of them are part of the cache key.
-$result = GeocodeCache::geocode(GeocodeQuery::make(
-    'Alexanderplatz 1, Berlin',
-    country: 'DE',
-    language: 'de',
-));
+$result = GeocodeCache::geocode(GeocodeQuery::make('Alexanderplatz 1, Berlin', country: 'DE', language: 'de'));
 
 if ($result === null) {
     // The service found nothing. Nothing was stored.
 }
 ```
 
-A failed lookup throws a `Taldres\GeocodeCache\Exceptions\GeocodingFailedException`, and a lookup that waited in vain for a
-parallel request of the same query a `GeocodingLockTimeoutException`. The exceptions the package defines implement
-`GeocodeCacheException`. The `GeocodeServiceCalled` and `GeocodeLookupFailed` events tell your application about calls of
-the service, see [Events](docs/events.md).
-
-## Limits
-
-This package is a geocoding cache with retention and deletion mechanisms. It does **not** guarantee that your use of
-Google data complies with Google's terms. That depends on your application, your contract and later changes of the
-terms. Attribution, display rules and map usage are your responsibility. It also cannot clean copies outside its own
-table: logs, queue payloads, other caches and backups. The reviewed terms are on the
-[Google Terms](docs/google-terms.md) page, with date and sources (reviewed on 17 October 2026).
+A failed lookup throws a `GeocodingFailedException`, see [Failures, Empty Results and Locks](docs/failures-and-locks.md).
+Keeping the coordinates of a venue or a company? See [Coordinates for Your Models](docs/models.md).
 
 ## Documentation
 
 The full documentation is in [docs](docs/README.md).
+
+## Limits
+
+The package is a geocoding cache with retention and deletion rules. It does **not** guarantee that your use of Google
+data complies with Google's terms. Attribution, display rules and map usage are your responsibility, and it cannot clean
+copies outside its own table. See [Google Terms](docs/google-terms.md) and
+[Retention and Deletion](docs/retention-and-deletion.md).
 
 ## Changelog
 
