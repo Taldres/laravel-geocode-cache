@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Taldres\GeocodeCache\Casts\UtcDateTime;
 use Taldres\GeocodeCache\Support\Settings;
+use Taldres\GeocodeCache\Support\UsesConfiguredConnection;
 
 /**
  * @property int $id
@@ -27,6 +28,7 @@ use Taldres\GeocodeCache\Support\Settings;
 class GeocodeCacheEntry extends Model
 {
     use MassPrunable;
+    use UsesConfiguredConnection;
 
     public $timestamps = false;
 

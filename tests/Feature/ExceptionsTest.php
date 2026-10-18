@@ -110,6 +110,7 @@ it('reports a setting of the wrong type with the configuration exception', funct
     'driver' => ['geocode-cache.driver', null, fn () => GeocodeCache::driver()],
     'table' => ['geocode-cache.table', null, fn () => (new GeocodeCacheEntry)->getTable()],
     'statistics table' => ['geocode-cache.statistics.table', 5, fn () => (new GeocodeCacheStatistic)->getTable()],
+    'connection' => ['geocode-cache.connection', 5, fn () => (new GeocodeCacheEntry)->getConnectionName()],
     'statistics retention' => ['geocode-cache.statistics.retention_days', 'many', fn () => (new GeocodeCacheStatistic)->prunable()],
     'touch interval' => ['geocode-cache.refresh.touch_interval', 'often', function () {
         config(['geocode-cache.refresh.enabled' => true]);

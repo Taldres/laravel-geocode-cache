@@ -43,7 +43,9 @@ class GeocodeCacheServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], ['geocode-cache-migrations', 'geocode-cache']);
 
-        $this->provideAboutSection();
+        if (config('geocode-cache.about', true)) {
+            $this->provideAboutSection();
+        }
     }
 
     private function provideAboutSection(): void
@@ -59,6 +61,9 @@ class GeocodeCacheServiceProvider extends ServiceProvider
                     : null,
                 'Driver' => AboutCommand::format($driver, console: fn (): string => is_string($driver) ? $driver : '<fg=red;options=bold>INVALID</>'),
                 'Table' => AboutCommand::format(config('geocode-cache.table')),
+                'Connection' => AboutCommand::format(config('geocode-cache.connection'), console: fn (): string => is_string(config('geocode-cache.connection')) && config('geocode-cache.connection') !== ''
+                    ? (string) config('geocode-cache.connection')
+                    : '<fg=gray>DEFAULT</>'),
                 'Retention' => AboutCommand::format($days, console: fn (): string => $this->driverLabel(fn (CachedGeocoder $geocoder): string => $geocoder->retentionDays().' days')),
                 'Precision' => AboutCommand::format(config('geocode-cache.precision'), console: fn (): string => $this->driverLabel(fn (CachedGeocoder $geocoder): string => $geocoder->precision().' decimals')),
                 'Statistics' => AboutCommand::format((bool) config('geocode-cache.statistics.enabled'), console: fn (): string => config('geocode-cache.statistics.enabled')

@@ -68,7 +68,8 @@ unchanged. Its message may then hold the request URL, which the package cannot p
 - **`Coordinates`** holds the latitude, the longitude and an optional place ID. It is all the cache keeps, so no other
   field of a response can leak into the table. `Coordinates::fromResponse()` builds it from untrusted response values.
 
-The retention comes from the configuration and belongs to the source. Read the terms of the provider first:
+The retention comes from the configuration and belongs to the source. Reading and following the terms of the provider is
+your responsibility, the package only enforces the maximum that the adapter reports:
 
 ```php
 'ttl_days' => 29,

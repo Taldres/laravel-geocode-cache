@@ -39,7 +39,8 @@ can be added as [custom adapters](custom-adapters.md).
 
 ## Limits
 
-- It does not guarantee that your use of Google data complies with Google's terms. Attribution, map display rules and
+- It does not guarantee that your use of Google data complies with Google's terms. Whoever integrates the package must
+  read and follow the terms of Google and of every other provider they use. Retention, attribution, map display rules and
   your contract are your responsibility, see [Google Terms](google-terms.md).
 - It stores only coordinates and the optional place ID, no formatted addresses or other fields of a response.
 - It cannot clean copies outside its own table, such as logs, queue payloads, other caches and backups, see

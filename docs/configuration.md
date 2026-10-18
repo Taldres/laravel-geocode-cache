@@ -7,6 +7,7 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | --- | --- | --- | --- |
 | `driver` | `GEOCODE_CACHE_DRIVER` | `google` | The driver used for lookups: `google` or a [custom one](custom-adapters.md). |
 | `table` | `GEOCODE_CACHE_TABLE` | `geocode_cache` | The name of the table. Set it before you migrate. |
+| `connection` | `GEOCODE_CACHE_DB_CONNECTION` | empty (default connection) | The database connection of both tables, a name from `config/database.php`. Set it before you migrate. |
 | `ttl_days` | `GEOCODE_CACHE_TTL_DAYS` | `29` | The days a result may be used and kept, counted from the fetch. 1 to 30 for results from Google. |
 | `source_ttl_days` | none | `[]` | The retention of a source that differs from `ttl_days`, for example `['mapbox' => 365]`. The adapter can set a maximum. |
 | `precision` | `GEOCODE_CACHE_PRECISION` | empty (maximum) | The decimals of latitude and longitude that are stored and returned, 0 up to the maximum of the adapter (7 for Google). |
@@ -20,6 +21,7 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `statistics.enabled` | `GEOCODE_CACHE_STATISTICS_ENABLED` | `false` | Counts requests per hash and day, see [Request Statistics](statistics.md). |
 | `statistics.table` | `GEOCODE_CACHE_STATISTICS_TABLE` | `geocode_cache_statistics` | The name of the statistics table. Set it before you migrate. |
 | `statistics.retention_days` | `GEOCODE_CACHE_STATISTICS_RETENTION_DAYS` | `90` | Days the prune command keeps the counters. |
+| `about` | `GEOCODE_CACHE_ABOUT` | `true` | Adds a "Geocode Cache" section to `php artisan about`. Set it to `false` to leave it out. |
 | `logging.channel` | `GEOCODE_CACHE_LOG_CHANNEL` | empty (off) | A log channel for the [operational log](events-and-logging.md#log). |
 | `refresh.enabled` | `GEOCODE_CACHE_REFRESH_ENABLED` | `false` | Stores what the [refresh](refreshing.md) needs. |
 | `refresh.store_query` | `GEOCODE_CACHE_REFRESH_STORE_QUERY` | `false` | Stores the query too, encrypted, so a refresh asks for the address again. |
@@ -29,8 +31,9 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `refresh.limit` | none | `100` | The maximum number of service calls of one refresh run. |
 
 An unusable setting is rejected with an `InvalidConfigurationException` before the service is called: a `ttl_days`
-that is zero, negative, not an integer or above the maximum of the adapter, a `precision` above the maximum, a missing
-API key, or a driver timeout that is not shorter than `lock.seconds`.
+that is zero, negative, not an integer or above the maximum of the adapter, a `precision` above the maximum, a
+`connection` that `config/database.php` does not define, a missing API key, or a driver timeout that is not shorter than
+`lock.seconds`.
 
 `precision` decides how exact the stored position is: 4 decimals are about 11 metres, 2 are about 1.1 kilometres. A
 coarser position is also less sensitive data. The precision is not part of the cache key, so existing entries keep the
@@ -39,3 +42,16 @@ precision they were stored with. A changed `ttl_days` applies to entries stored 
 The retention belongs to the source and not to the driver, because drivers with the same source share their entries.
 Switching to a driver with another source invalidates nothing: the entries of the old source stay unused until they
 expire.
+
+## A Connection of Its Own
+
+By default the tables live on the default database connection. Name another one with `connection` to keep the cache out
+of the transactions of your application, so a rollback does not undo a lookup that was paid for, or to let all tenants
+share one cache when the default connection switches per tenant. The connection applies to the cache table and to the
+statistics table, to the migrations and to the models. Set it before you publish and run the migrations. If you change
+it later, move the tables yourself, as with a new table name.
+
+The name does not have to appear in `config/database.php`, a connection registered at runtime works too. With the setting
+in place, `php artisan migrate --database=...` does not move the two migrations. They always run on the connection of the
+package. `migrate:fresh` only drops the tables of the default connection, so drop the tables of the package yourself
+before you run it again, see [Testing Your Application](testing.md).

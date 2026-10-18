@@ -10,13 +10,14 @@ description: Geocode addresses, places and postal codes with taldres/laravel-geo
 Use it when an application needs coordinates for an address, a place or a postal code and `taldres/laravel-geocode-cache`
 is installed. The package is a cache with retention rules, not a store for geodata: every entry expires, and expired
 entries are deleted. Google allows the temporary storage of coordinates for up to 30 consecutive calendar days. The
-package does not guarantee compliance with Google's terms. Attribution, map display rules and the contract that applies
-are the application's job.
+package does not guarantee compliance with Google's terms. Whoever integrates it must read and follow the terms of Google
+and of any other provider they use. Attribution, map display rules and the contract that applies are the application's
+job.
 
 ## Setup
 
-1. Publish the config and the migration, set the table name in `config/geocode-cache.php` first if the default
-   `geocode_cache` does not fit, then migrate:
+1. Publish the config and the migration, set the table name (`table`) or the database connection (`connection`,
+   `GEOCODE_CACHE_DB_CONNECTION`) in `config/geocode-cache.php` first if the defaults do not fit, then migrate:
 
     ```bash
     php artisan vendor:publish --tag=geocode-cache
@@ -38,8 +39,8 @@ are the application's job.
     Schedule::command('geocode-cache:prune')->hourly()->onOneServer()->withoutOverlapping();
     ```
 
-`php artisan about --only=geocode_cache` shows the driver, the table, the retention and whether the prune command is
-scheduled. Run it to check the setup.
+`php artisan about --only=geocode_cache` shows the driver, the table, the connection, the retention and whether the prune
+command is scheduled (`GEOCODE_CACHE_ABOUT=false` switches the section off). Run it to check the setup.
 
 ## Looking Coordinates Up
 

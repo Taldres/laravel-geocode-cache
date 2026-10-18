@@ -4,6 +4,10 @@ The defaults of the package follow the Google Maps Platform terms as reviewed on
 Check the original sources before you rely on this page. The contract that applies to you and your billing address
 decide.
 
+This page is a summary and no legal advice. **You are responsible for reading the current terms of Google, and of every
+other provider whose adapter you use, and for following them.** That includes what the package does not enforce, such as
+attribution and the display of results on a map.
+
 ## Retention of Coordinates
 
 Google allows the temporary storage of latitude and longitude values from the Geocoding API for up to **30 consecutive

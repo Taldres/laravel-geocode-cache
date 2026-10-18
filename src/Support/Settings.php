@@ -38,4 +38,24 @@ final class Settings
             throw new InvalidConfigurationException($exception->getMessage(), previous: $exception);
         }
     }
+
+    /**
+     * The connection of the tables of the package, or null for the default connection.
+     *
+     * @throws InvalidConfigurationException
+     */
+    public static function connection(): ?string
+    {
+        $connection = config('geocode-cache.connection');
+
+        if ($connection === null || $connection === '') {
+            return null;
+        }
+
+        if (! is_string($connection)) {
+            throw new InvalidConfigurationException('The setting geocode-cache.connection must be the name of a database connection.');
+        }
+
+        return $connection;
+    }
 }
