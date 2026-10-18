@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -210,6 +211,24 @@ it('shows the settings in the about command as JSON', function () {
         'prune_scheduled' => false,
         'refresh' => false,
     ]);
+});
+
+it('adds a section to the about command by default', function () {
+    expect(config('geocode-cache.about'))->toBeTrue();
+
+    Artisan::call('about', ['--json' => true]);
+
+    expect(json_decode(Artisan::output(), true))->toHaveKey('geocode_cache');
+});
+
+it('leaves the about command alone when the section is switched off', function () {
+    AboutCommand::flushState();
+    config(['geocode-cache.about' => false]);
+    $this->app->register(GeocodeCacheServiceProvider::class, force: true);
+
+    Artisan::call('about', ['--json' => true]);
+
+    expect(json_decode(Artisan::output(), true))->not->toHaveKey('geocode_cache');
 });
 
 it('shows the effective precision in the about command', function () {

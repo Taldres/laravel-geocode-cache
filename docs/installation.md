@@ -54,7 +54,8 @@ The scheduler itself needs its usual cron entry: `* * * * * cd /path-to-your-pro
 php artisan about --only=geocode_cache
 ```
 
-It shows the driver, the table, the connection, the retention and whether the prune command is scheduled.
+It shows the driver, the table, the connection, the retention and whether the prune command is scheduled. Set `about` to
+`false` in the configuration if you do not want the section.
 
 ## Laravel Boost
 

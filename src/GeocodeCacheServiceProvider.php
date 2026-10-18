@@ -43,7 +43,9 @@ class GeocodeCacheServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], ['geocode-cache-migrations', 'geocode-cache']);
 
-        $this->provideAboutSection();
+        if (config('geocode-cache.about', true)) {
+            $this->provideAboutSection();
+        }
     }
 
     private function provideAboutSection(): void

@@ -97,6 +97,12 @@ return [
     ],
 
     /*
+     * Whether the package adds a "Geocode Cache" section to `php artisan about`. It shows the driver, the table, the
+     * retention and whether the prune command is scheduled. Switch it off if you do not want it in that output.
+     */
+    'about' => (bool) env('GEOCODE_CACHE_ABOUT', true),
+
+    /*
      * An optional log of failed lookups, lock timeouts and the runs of the prune and refresh commands.
      * Name a channel of config/logging.php to switch it on, leave it empty to switch it off.
      * The log never contains the searched text, the key hash, coordinates, place IDs or the API key.

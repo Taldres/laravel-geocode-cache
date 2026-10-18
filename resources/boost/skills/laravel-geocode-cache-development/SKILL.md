@@ -39,7 +39,7 @@ are the application's job.
     ```
 
 `php artisan about --only=geocode_cache` shows the driver, the table, the connection, the retention and whether the prune
-command is scheduled. Run it to check the setup.
+command is scheduled (`GEOCODE_CACHE_ABOUT=false` switches the section off). Run it to check the setup.
 
 ## Looking Coordinates Up
 

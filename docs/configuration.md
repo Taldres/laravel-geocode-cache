@@ -21,6 +21,7 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `statistics.enabled` | `GEOCODE_CACHE_STATISTICS_ENABLED` | `false` | Counts requests per hash and day, see [Request Statistics](statistics.md). |
 | `statistics.table` | `GEOCODE_CACHE_STATISTICS_TABLE` | `geocode_cache_statistics` | The name of the statistics table. Set it before you migrate. |
 | `statistics.retention_days` | `GEOCODE_CACHE_STATISTICS_RETENTION_DAYS` | `90` | Days the prune command keeps the counters. |
+| `about` | `GEOCODE_CACHE_ABOUT` | `true` | Adds a "Geocode Cache" section to `php artisan about`. Set it to `false` to leave it out. |
 | `logging.channel` | `GEOCODE_CACHE_LOG_CHANNEL` | empty (off) | A log channel for the [operational log](events-and-logging.md#log). |
 | `refresh.enabled` | `GEOCODE_CACHE_REFRESH_ENABLED` | `false` | Stores what the [refresh](refreshing.md) needs. |
 | `refresh.store_query` | `GEOCODE_CACHE_REFRESH_STORE_QUERY` | `false` | Stores the query too, encrypted, so a refresh asks for the address again. |
