@@ -25,6 +25,22 @@ $result?->latitude;   // 51.0504088
 $result?->expiresAt;  // the entry may not be used after this moment
 ```
 
+## Why Use This Package
+
+Geocoding results are not yours to keep forever. Google allows the temporary storage of coordinates for up to 30
+consecutive calendar days, and a plain cache or a `latitude` column in your table ignores that. Calling the API for every
+request costs money and time, though. This package sits in between:
+
+- **Fewer API calls.** Valid entries come from your database, and a lock per query stops parallel requests from calling
+  the service twice.
+- **Retention built in.** Every entry has a hard expiry that reading never extends. An expired entry is never returned,
+  not even when the service is down, and a scheduled command really deletes it.
+- **Less data.** Only the coordinates and the optional place ID are stored, never the formatted address or other fields
+  of a response. Logs, events and exception messages never hold the searched text or coordinates.
+- **Models stay current.** A model keeps its address and the Google place ID and asks the cache for the coordinates. An
+  optional refresh renews entries that are still in use before they expire.
+- **Failures stay harmless.** A failed or empty lookup never changes a stored entry.
+
 ## Features
 
 - Google Geocoding API as the data source
@@ -69,15 +85,27 @@ Check the setup with `php artisan about --only=geocode_cache`.
 ## Usage
 
 ```php
+// Postal codes are strings, so leading zeros survive. Give a country to avoid ambiguity.
+$result = GeocodeCache::geocode(GeocodeQuery::make('01067', country: 'DE'));
+
 // An address with more parameters. All of them are part of the cache key.
-$result = GeocodeCache::geocode(GeocodeQuery::make('Alexanderplatz 1, Berlin', country: 'DE', language: 'de'));
+$result = GeocodeCache::geocode(GeocodeQuery::make(
+    'Alexanderplatz 1, Berlin',
+    country: 'DE',
+    language: 'de',
+));
 
 if ($result === null) {
     // The service found nothing. Nothing was stored.
 }
 ```
 
-A failed lookup throws a `GeocodingFailedException`, see [Failures, Empty Results and Locks](docs/failures-and-locks.md).
+A failed lookup throws a `Taldres\GeocodeCache\Exceptions\GeocodingFailedException`, and a lookup that waited in vain for a
+parallel request of the same query a `GeocodingLockTimeoutException`. The exceptions the package defines implement
+`GeocodeCacheException`, see [Failures, Empty Results and Locks](docs/failures-and-locks.md). The `GeocodeServiceCalled`
+and `GeocodeLookupFailed` events tell your application about calls of the service, see
+[Events and Logging](docs/events-and-logging.md).
+
 Keeping the coordinates of a venue or a company? See [Coordinates for Your Models](docs/models.md).
 
 ## Documentation

@@ -15,6 +15,8 @@ searched text, the key hash, coordinates, place IDs or the API key.
 
 ```php
 use Illuminate\Support\Facades\Event;
+use Taldres\GeocodeCache\Events\GeocodeLookupFailed;
+use Taldres\GeocodeCache\Events\GeocodeServiceCalled;
 
 Event::listen(GeocodeServiceCalled::class, fn (GeocodeServiceCalled $event) => Metrics::increment("geocode.{$event->source}"));
 Event::listen(GeocodeLookupFailed::class, fn (GeocodeLookupFailed $event) => Metrics::increment("geocode.failed.{$event->reason}"));
@@ -30,6 +32,8 @@ undo the lookup: the package writes a warning to the log and passes the exceptio
 failed assertions inside a listener, so assert on `Event::fake()` in your tests instead:
 
 ```php
+use Illuminate\Support\Facades\Event;
+
 Event::fake([GeocodeServiceCalled::class]);
 
 GeocodeCache::geocode(GeocodeQuery::make('Alexanderplatz 1', 'DE'));
