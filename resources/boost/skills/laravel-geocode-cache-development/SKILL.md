@@ -10,8 +10,9 @@ description: Geocode addresses, places and postal codes with taldres/laravel-geo
 Use it when an application needs coordinates for an address, a place or a postal code and `taldres/laravel-geocode-cache`
 is installed. The package is a cache with retention rules, not a store for geodata: every entry expires, and expired
 entries are deleted. Google allows the temporary storage of coordinates for up to 30 consecutive calendar days. The
-package does not guarantee compliance with Google's terms. Attribution, map display rules and the contract that applies
-are the application's job.
+package does not guarantee compliance with Google's terms. Whoever integrates it must read and follow the terms of Google
+and of any other provider they use. Attribution, map display rules and the contract that applies are the application's
+job.
 
 ## Setup
 

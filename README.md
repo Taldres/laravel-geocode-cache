@@ -86,10 +86,10 @@ The full documentation is in [docs](docs/README.md).
 
 ## Limits
 
-The package is a geocoding cache with retention and deletion rules. It does **not** guarantee that your use of Google
-data complies with Google's terms. Attribution, display rules and map usage are your responsibility, and it cannot clean
-copies outside its own table. See [Google Terms](docs/google-terms.md) and
-[Retention and Deletion](docs/retention-and-deletion.md).
+The package is a geocoding cache with retention and deletion rules. **You are responsible for reading and following the
+terms of Google and of every other geocoding provider you use**: retention, attribution, display rules and map usage. The
+package cannot guarantee that your use complies with them, and it cannot clean copies outside its own table. See
+[Google Terms](docs/google-terms.md) and [Retention and Deletion](docs/retention-and-deletion.md).
 
 ## Changelog
 
