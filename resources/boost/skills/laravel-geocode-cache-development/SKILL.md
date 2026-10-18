@@ -15,8 +15,8 @@ are the application's job.
 
 ## Setup
 
-1. Publish the config and the migration, set the table name in `config/geocode-cache.php` first if the default
-   `geocode_cache` does not fit, then migrate:
+1. Publish the config and the migration, set the table name (`table`) or the database connection (`connection`,
+   `GEOCODE_CACHE_DB_CONNECTION`) in `config/geocode-cache.php` first if the defaults do not fit, then migrate:
 
     ```bash
     php artisan vendor:publish --tag=geocode-cache
@@ -38,8 +38,8 @@ are the application's job.
     Schedule::command('geocode-cache:prune')->hourly()->onOneServer()->withoutOverlapping();
     ```
 
-`php artisan about --only=geocode_cache` shows the driver, the table, the retention and whether the prune command is
-scheduled. Run it to check the setup.
+`php artisan about --only=geocode_cache` shows the driver, the table, the connection, the retention and whether the prune
+command is scheduled. Run it to check the setup.
 
 ## Looking Coordinates Up
 

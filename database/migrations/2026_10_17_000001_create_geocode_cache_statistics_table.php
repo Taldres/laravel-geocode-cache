@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    public function getConnection(): ?string
+    {
+        $connection = config('geocode-cache.connection');
+
+        return is_string($connection) && $connection !== '' ? $connection : null;
+    }
+
     public function up(): void
     {
         Schema::create($this->table(), function (Blueprint $table) {

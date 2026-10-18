@@ -14,8 +14,9 @@
 composer require taldres/laravel-geocode-cache
 ```
 
-Publish the configuration and the migration, then migrate. If the default table name `geocode_cache` does not fit,
-change `table` in the published configuration before you migrate:
+Publish the configuration and the migration, then migrate. If the default table name `geocode_cache` does not fit, or the
+tables belong on another database connection, change `table` or `connection` in the published configuration before you
+migrate:
 
 ```bash
 php artisan vendor:publish --tag=geocode-cache
@@ -53,7 +54,7 @@ The scheduler itself needs its usual cron entry: `* * * * * cd /path-to-your-pro
 php artisan about --only=geocode_cache
 ```
 
-It shows the driver, the table, the retention and whether the prune command is scheduled.
+It shows the driver, the table, the connection, the retention and whether the prune command is scheduled.
 
 ## Laravel Boost
 

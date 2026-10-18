@@ -19,6 +19,7 @@ use Taldres\GeocodeCache\Tests\Fixtures\FakeAdapter;
 it('merges the default configuration', function () {
     expect(config('geocode-cache.driver'))->toBe('google')
         ->and(config('geocode-cache.table'))->toBe('geocode_cache')
+        ->and(config('geocode-cache.connection'))->toBeNull()
         ->and(config('geocode-cache.ttl_days'))->toBe(29)
         ->and(config('geocode-cache.precision'))->toBeNull()
         ->and(config('geocode-cache.store_place_id'))->toBeTrue()
@@ -201,6 +202,7 @@ it('shows the settings in the about command as JSON', function () {
     expect($about)->toMatchArray([
         'driver' => 'google',
         'table' => 'geocode_cache',
+        'connection' => null,
         'retention' => 29,
         'precision' => null,
         'statistics' => false,

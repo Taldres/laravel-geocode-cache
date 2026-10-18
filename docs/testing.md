@@ -21,6 +21,10 @@ Use `['status' => 'ZERO_RESULTS', 'results' => []]` for an empty result and `['s
 The tests need the `geocode_cache` table, so use `RefreshDatabase` or `LazilyRefreshDatabase`, and a configured API key,
 for example `config(['geocode-cache.drivers.google.api_key' => 'test'])`.
 
+If you set a [connection of its own](configuration.md#a-connection-of-its-own) for the tables, those refresh traits
+reset the default connection only. Use an in-memory SQLite connection for it in your tests, or add the connection to
+`$connectionsToTransact` and drop its tables before `migrate:fresh`.
+
 ## Use Your Own Adapter
 
 An adapter that returns fixed coordinates keeps HTTP out of your tests entirely:

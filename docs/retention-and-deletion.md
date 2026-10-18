@@ -54,7 +54,7 @@ Taldres\GeocodeCache\Models\GeocodeCacheEntry::query()->delete();
 
 Dates are stored as UTC and handed out in the timezone of the application, so a change of `app.timezone` or a daylight
 saving change cannot shift the end of a period. If you query or write the table yourself with `Builder::update()`,
-`where()` or `DB::table()`, Laravel skips the casts: pass `->utc()` Carbon values.
+`where()` or `DB::table()`, Laravel skips the casts: pass `->utc()` Carbon values. With a [connection of its own](configuration.md#a-connection-of-its-own), name it: `DB::connection(config('geocode-cache.connection'))->table(...)`.
 
 ## Copies the Package Cannot Delete
 

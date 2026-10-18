@@ -15,6 +15,14 @@ return [
     'table' => env('GEOCODE_CACHE_TABLE', 'geocode_cache'),
 
     /*
+     * The database connection of the cache table and the statistics table, a name from config/database.php. Leave
+     * it empty for the default connection. A connection of its own keeps the cache out of the transactions of your
+     * application and, with a tenant database as the default, lets all tenants share one cache. Set it before you
+     * publish and run the migrations.
+     */
+    'connection' => env('GEOCODE_CACHE_DB_CONNECTION'),
+
+    /*
      * The number of days a result may be used and kept, counted from the moment it was fetched from the service.
      * Reading an entry never extends it. Google allows the temporary storage of coordinates for up to 30
      * consecutive calendar days, so values above 30 are rejected for results from Google. The default of 29 days

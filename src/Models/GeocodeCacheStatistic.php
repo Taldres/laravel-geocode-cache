@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use InvalidArgumentException;
 use Taldres\GeocodeCache\Support\Settings;
+use Taldres\GeocodeCache\Support\UsesConfiguredConnection;
 
 /**
  * @property int $id
@@ -23,6 +24,7 @@ use Taldres\GeocodeCache\Support\Settings;
 class GeocodeCacheStatistic extends Model
 {
     use MassPrunable;
+    use UsesConfiguredConnection;
 
     public const array COUNTERS = ['hits', 'lookups', 'refreshes'];
 

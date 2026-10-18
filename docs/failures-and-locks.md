@@ -63,4 +63,6 @@ store. `lock.seconds` must exceed the timeout of the driver and be 1 or more, `l
 
 Keep `geocode()` outside of database transactions when the locks live in the `database` cache store on the same
 connection. Otherwise the lock row belongs to your transaction, other processes can wait for it beyond `lock.wait`, and
-a rollback undoes the write. Alternatively give the locks a store of their own with `lock.store`.
+a rollback undoes the write. Alternatively give the locks a store of their own with `lock.store`. A `connection` of its
+own for the [cache tables](configuration.md#a-connection-of-its-own) keeps the entries out of your transaction, but not
+the lock.
