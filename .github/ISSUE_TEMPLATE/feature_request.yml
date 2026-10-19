@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an improvement or a new capability.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what is in your way?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How could the package solve it? Code examples help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What did you try or consider instead?
+  - type: checkboxes
+    id: retention
+    attributes:
+      label: Retention rules
+      options:
+        - label: The proposal does not store more than the coordinates and the place ID, and does not extend the retention of an entry.
+          required: true

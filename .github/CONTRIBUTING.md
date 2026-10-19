@@ -1,7 +1,7 @@
 # Contributing
 
 Contributions are welcome: bug reports, fixes and documentation improvements alike. For significant changes, please open
-an issue first so we can discuss the approach.
+an issue first so we can discuss the approach. Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Setup
 
