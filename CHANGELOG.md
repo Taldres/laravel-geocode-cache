@@ -2,6 +2,25 @@
 
 All notable changes to `laravel-geocode-cache` will be documented in this file
 
+## v0.2.0 - 2026-10-19
+
+<!-- Release notes generated using configuration in .github/release.yml at main -->
+### What's Changed
+
+#### Breaking Changes
+
+* fix!: limit the retention of Google results to 29 days by [@Taldres](https://github.com/Taldres) in https://github.com/Taldres/laravel-geocode-cache/pull/10
+
+#### Other Changes
+
+* docs: update the changelog for v0.1.0 by [@github-actions](https://github.com/github-actions)[bot] in https://github.com/Taldres/laravel-geocode-cache/pull/9
+
+### New Contributors
+
+* [@github-actions](https://github.com/github-actions)[bot] made their first contribution in https://github.com/Taldres/laravel-geocode-cache/pull/9
+
+**Full Changelog**: https://github.com/Taldres/laravel-geocode-cache/compare/v0.1.0...v0.2.0
+
 ## v0.1.0 - 2026-10-19
 
 <!-- Release notes generated using configuration in .github/release.yml at main -->
