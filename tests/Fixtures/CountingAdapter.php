@@ -28,7 +28,7 @@ final readonly class CountingAdapter implements Adapter
 
     public function maximumRetentionDays(): ?int
     {
-        return 30;
+        return 29;
     }
 
     public function geocode(GeocodeQuery $query): ?Coordinates

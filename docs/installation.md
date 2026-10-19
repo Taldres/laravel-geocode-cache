@@ -44,8 +44,8 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('geocode-cache:prune')->hourly()->onOneServer()->withoutOverlapping();
 ```
 
-The default retention of 29 days leaves one day below the maximum of 30 days for results from Google. That day gives
-the schedule room. It does not replace a scheduler that actually runs, so monitor it, for example with `pingOnFailure()`.
+Google allows 30 days. The maximum retention for results from Google is 29 days, which is also the default, so one day
+is left as room for the schedule. It does not replace a scheduler that actually runs, so monitor it, for example with `pingOnFailure()`.
 The scheduler itself needs its usual cron entry: `* * * * * cd /path-to-your-project && php artisan schedule:run`.
 
 ## Check the Setup

@@ -30,8 +30,8 @@ The optional [statistics](statistics.md) live in a second table. They hold no co
 - The check happens on every access. An expired entry is deleted when it is found, before the service is asked.
 - A changed `ttl_days` applies to entries stored afterwards. An entry whose period exceeds the maximum of its adapter is
   deleted instead of returned. To apply a shorter retention to everything at once, delete the entries (see below).
-- With the default of 29 days, an entry from Google is gone before the 30 days are over, if the prune command runs at
-  least daily. A retention of 30 days is allowed, but an entry stays in the table until the next prune.
+- The retention of results from Google is limited to 29 days, so an entry is gone before the 30 days are over, if the
+  prune command runs at least daily.
 
 ## Deleting What Nobody Asks For
 

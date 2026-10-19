@@ -20,9 +20,10 @@ use Taldres\GeocodeCache\Exceptions\InvalidConfigurationException;
 final readonly class GoogleAdapter implements Adapter, SupportsPlaceIdLookup
 {
     /**
-     * Google allows the temporary storage of coordinates for up to 30 consecutive calendar days.
+     * Google allows the temporary storage of coordinates for up to 30 consecutive calendar days. The maximum is one
+     * day lower, so the scheduled prune deletes an entry before the 30 days are over.
      */
-    public const int MAXIMUM_RETENTION_DAYS = 30;
+    public const int MAXIMUM_RETENTION_DAYS = 29;
 
     public function __construct(
         private string $apiKey,

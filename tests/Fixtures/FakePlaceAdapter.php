@@ -29,7 +29,7 @@ final class FakePlaceAdapter implements Adapter, SupportsPlaceIdLookup
     public function __construct(
         private array $responses = [],
         private readonly string $source = 'google',
-        private readonly ?int $maximumRetentionDays = 30,
+        private readonly ?int $maximumRetentionDays = 29,
     ) {}
 
     /**

@@ -210,10 +210,10 @@ it('uses the configured number of days', function () {
     expect($result->expiresAt->equalTo(now()->addDays(7)))->toBeTrue();
 });
 
-it('accepts the maximum of 30 days for Google', function () {
-    config(['geocode-cache.ttl_days' => 30]);
+it('accepts the maximum of 29 days for Google', function () {
+    config(['geocode-cache.ttl_days' => 29]);
 
-    expect((new CachedGeocoder(FakeAdapter::returning()))->retentionDays())->toBe(30);
+    expect((new CachedGeocoder(FakeAdapter::returning()))->retentionDays())->toBe(29);
 });
 
 it('rejects a retention that does not fit', function (mixed $days) {
@@ -226,7 +226,7 @@ it('rejects a retention that does not fit', function (mixed $days) {
 })->with([
     'zero' => [0],
     'negative' => [-1],
-    'more than Google allows' => [31],
+    'more than Google allows' => [30],
     'a string' => ['29'],
     'null' => [null],
 ]);
@@ -265,10 +265,10 @@ it('uses the retention of the source of the adapter', function () {
 });
 
 it('checks the retention of a source against the maximum of the adapter', function () {
-    config(['geocode-cache.source_ttl_days' => ['google' => 31]]);
+    config(['geocode-cache.source_ttl_days' => ['google' => 30]]);
 
     expect(fn () => (new CachedGeocoder(FakeAdapter::returning()))->retentionDays())
-        ->toThrow(InvalidArgumentException::class, 'must not exceed 30 days');
+        ->toThrow(InvalidArgumentException::class, 'must not exceed 29 days');
 
     config(['geocode-cache.source_ttl_days' => ['google' => 10]]);
 
@@ -319,12 +319,12 @@ it('does not return an entry that was kept longer than the adapter allows', func
 });
 
 it('returns an entry that is kept exactly as long as the adapter allows', function () {
-    config(['geocode-cache.ttl_days' => 30]);
+    config(['geocode-cache.ttl_days' => 29]);
     $adapter = FakeAdapter::returning();
     $geocoder = new CachedGeocoder($adapter);
     $geocoder->geocode('Berlin');
 
-    $this->travel(29)->days();
+    $this->travel(28)->days();
     $geocoder->geocode('Berlin');
 
     expect($adapter->calls())->toBe(1);

@@ -23,7 +23,7 @@ final class FakeAdapter implements Adapter
         private array $responses = [],
         private readonly string $source = 'google',
         private readonly int $maximumPrecision = Coordinates::MAXIMUM_PRECISION,
-        private readonly ?int $maximumRetentionDays = 30,
+        private readonly ?int $maximumRetentionDays = 29,
     ) {}
 
     public static function returning(float $latitude = 52.52, float $longitude = 13.405, ?string $placeId = 'place-1'): self

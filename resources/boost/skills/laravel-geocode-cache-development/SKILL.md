@@ -98,7 +98,7 @@ $result?->placeId; // remember it on the model yourself, the package never write
 Only the key hash, the source, latitude, longitude (rounded to `GEOCODE_CACHE_PRECISION` decimals, up to the 7 that
 Google delivers), the optional place ID (`GEOCODE_CACHE_STORE_PLACE_ID`), and the
 fetch and expiry times. The formatted address and the address components of the response are never stored. The default
-retention is 29 days (`GEOCODE_CACHE_TTL_DAYS`, or `source_ttl_days` per source, 1 to 30 for Google). It counts from the fetch. Reading an entry does
+retention is 29 days (`GEOCODE_CACHE_TTL_DAYS`, or `source_ttl_days` per source, 1 to 29 for Google). It counts from the fetch. Reading an entry does
 not extend it, only a new successful lookup starts a new period.
 
 Copies elsewhere are the application's responsibility: do not log results, do not put them in queue payloads or other
@@ -156,7 +156,7 @@ GeocodeCache::extend('mapbox', fn () => new MapboxAdapter(config('services.mapbo
 ```
 
 An adapter also reports `maximumRetentionDays()` (`null` for no limit). The retention of a source other than `google`
-can be set with `source_ttl_days` (`['mapbox' => 365]`) and may exceed 30 days if its terms allow it. Check the terms of
+can be set with `source_ttl_days` (`['mapbox' => 365]`) and may exceed 29 days if its terms allow it. Check the terms of
 that provider first. Adapter, driver and source are different things: the driver is the configured name, the source is
 the provider that is stored with every entry.
 
@@ -181,7 +181,7 @@ altogether.
 ## Anti-Patterns
 
 - Not scheduling `geocode-cache:prune`.
-- Raising `ttl_days` above 30 for Google results, or reading `geocode_cache` rows directly and ignoring `expires_at`.
+- Raising `ttl_days` above 29 for Google results, or reading `geocode_cache` rows directly and ignoring `expires_at`.
 - Storing the formatted address or other fields of a Google response next to the coordinates.
 - Passing postal codes as integers.
 - Adding `latitude` and `longitude` columns, or a relation to the cache table, to a model.
