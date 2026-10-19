@@ -8,7 +8,7 @@ Publish the configuration with `php artisan vendor:publish --tag=geocode-cache-c
 | `driver` | `GEOCODE_CACHE_DRIVER` | `google` | The driver used for lookups: `google` or a [custom one](custom-adapters.md). |
 | `table` | `GEOCODE_CACHE_TABLE` | `geocode_cache` | The name of the table. Set it before you migrate. |
 | `connection` | `GEOCODE_CACHE_DB_CONNECTION` | empty (default connection) | The database connection of both tables, a name from `config/database.php`. Set it before you migrate. |
-| `ttl_days` | `GEOCODE_CACHE_TTL_DAYS` | `29` | The days a result may be used and kept, counted from the fetch. 1 to 30 for results from Google. |
+| `ttl_days` | `GEOCODE_CACHE_TTL_DAYS` | `29` | The days a result may be used and kept, counted from the fetch. 1 to 29 for results from Google. |
 | `source_ttl_days` | none | `[]` | The retention of a source that differs from `ttl_days`, for example `['mapbox' => 365]`. The adapter can set a maximum. |
 | `precision` | `GEOCODE_CACHE_PRECISION` | empty (maximum) | The decimals of latitude and longitude that are stored and returned, 0 up to the maximum of the adapter (7 for Google). |
 | `store_place_id` | `GEOCODE_CACHE_STORE_PLACE_ID` | `true` | Whether the place ID of a result is stored next to the coordinates. |

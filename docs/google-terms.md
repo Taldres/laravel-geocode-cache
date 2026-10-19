@@ -16,8 +16,9 @@ calendar days**. After that the stored values have to be deleted.
 - For customers with a billing address in the European Economic Area, the rule is in section 6.2.1 of the EEA terms.
 - For customers outside the EEA, the corresponding rule is in section 6.3.1.
 
-The package defaults to **29 days** and rejects a `ttl_days` or `source_ttl_days['google']` above 30 for results from Google, and it does not return an entry that was stored for a longer period. The remaining day gives the
-scheduled pruning room. It does not replace a scheduler that runs reliably.
+The package defaults to **29 days** and rejects a `ttl_days` or `source_ttl_days['google']` above 29 for results from
+Google, and it does not return an entry that was stored for a longer period. The remaining day gives the scheduled
+pruning room, because deleting is not the same as not returning an entry. It does not replace a scheduler that runs reliably.
 
 ## Not the Whole Response
 

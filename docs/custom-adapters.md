@@ -62,7 +62,7 @@ unchanged. Its message may then hold the request URL, which the package cannot p
   return the same value and share their entries. One that reads from Google returns `google`.
 - **`maximumRetentionDays()`** is the most days the terms of the provider allow, or `null` for no limit. A `ttl_days` or
   `source_ttl_days` above it is rejected, and an entry stored for longer is deleted instead of returned. Adapters with
-  the same source must report the same value. The `google` adapter returns 30.
+  the same source must report the same value. The `google` adapter returns 29.
 - **`maximumPrecision()`** is the most decimals the service delivers. The `precision` setting cannot exceed it, and the
   table stores seven at most.
 - **`Coordinates`** holds the latitude, the longitude and an optional place ID. It is all the cache keeps, so no other
@@ -164,7 +164,7 @@ GeocodeCache::extend('google', fn () => new RateLimitedGoogleAdapter(
 ```
 
 - Pass `source()`, `maximumPrecision()` and `maximumRetentionDays()` on unchanged, so the wrapper shares its entries
-  with the plain adapter and keeps the 30 days of Google.
+  with the plain adapter and keeps the 29 days of Google.
 - Implement `SupportsPlaceIdLookup` as well. Without it the cache refuses place ID queries and the refresh cannot renew
   entries through their place ID.
 - The cache only calls the adapter when it has no valid entry, so cache hits do not count against the limit.

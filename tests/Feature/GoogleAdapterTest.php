@@ -133,7 +133,7 @@ it('refuses an empty API key', function () {
 it('reads from Google', function () {
     expect((new GoogleAdapter('secret-key'))->source())->toBe('google')
         ->and((new GoogleAdapter('secret-key'))->maximumPrecision())->toBe(7)
-        ->and((new GoogleAdapter('secret-key'))->maximumRetentionDays())->toBe(30);
+        ->and((new GoogleAdapter('secret-key'))->maximumRetentionDays())->toBe(29);
 });
 
 it('can look place IDs up', function () {

@@ -25,8 +25,8 @@ return [
     /*
      * The number of days a result may be used and kept, counted from the moment it was fetched from the service.
      * Reading an entry never extends it. Google allows the temporary storage of coordinates for up to 30
-     * consecutive calendar days, so values above 30 are rejected for results from Google. The default of 29 days
-     * leaves a day for the scheduled geocode-cache:prune command. Check the terms that apply to your contract.
+     * consecutive calendar days. Values above 29 are rejected for results from Google, so a day is left for the
+     * scheduled geocode-cache:prune command. Check the terms that apply to your contract.
      */
     'ttl_days' => (int) env('GEOCODE_CACHE_TTL_DAYS', 29),
 
@@ -34,7 +34,7 @@ return [
      * The retention of a data source that differs from ttl_days, keyed by the source of the adapter, for example
      * ['mapbox' => 365]. The retention is a matter of the terms of the provider, so it belongs to the source and not to
      * a driver: drivers with the same source share their entries. The adapter can set a maximum for its source (Google:
-     * 30 days) and a value above it is rejected.
+     * 29 days) and a value above it is rejected.
      */
     'source_ttl_days' => [],
 
