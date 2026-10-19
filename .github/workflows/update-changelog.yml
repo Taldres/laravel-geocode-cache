@@ -13,41 +13,34 @@ jobs:
     timeout-minutes: 5
 
     permissions:
-      # Allows the job to push the changelog branch and open a pull request.
+      # Allows the job to push the updated changelog.
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          # The whole history, so the release date can be read from the tag.
+          fetch-depth: 0
+          ref: ${{ github.event.release.target_commitish }}
+
+      - name: Read the release date from the tag
+        id: release_date
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: echo "date=$(date -u -d "@$(git log -1 --format=%ct "$TAG")" +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
       - name: Update changelog
         uses: stefanzweifel/changelog-updater-action@a938690fad7edf25368f37e43a1ed1b34303eb36 # v1.12.0
         with:
           latest-version: ${{ github.event.release.tag_name }}
+          release-date: ${{ steps.release_date.outputs.date }}
           release-notes: ${{ github.event.release.body }}
+          parse-github-usernames: true
 
-      # main requires passing checks, which a push by this workflow cannot
-      # have, so the changelog goes through a pull request that a maintainer
-      # merges (checks do not run on pull requests opened with GITHUB_TOKEN).
-      - name: Open a pull request with the updated changelog
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-          BASE: main
-        run: |
-          if git diff --quiet -- CHANGELOG.md; then
-            echo "The changelog is up to date."
-            exit 0
-          fi
-          branch="changelog/${TAG}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --create "$branch"
-          git commit --message "docs: update the changelog for ${TAG}" -- CHANGELOG.md
-          git push --force origin "$branch"
-          gh pr create --base "$BASE" --head "$branch" \
-            --title "docs: update the changelog for ${TAG}" \
-            --body "Generated from the release notes of ${TAG}."
+      - name: Commit updated changelog
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
+        with:
+          branch: ${{ github.event.release.target_commitish }}
+          commit_message: "docs: update the changelog for ${{ github.event.release.tag_name }}"
+          file_pattern: CHANGELOG.md
